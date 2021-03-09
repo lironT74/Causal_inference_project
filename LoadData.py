@@ -87,14 +87,13 @@ if __name__ == '__main__':
     Y_train = Y_train.toarray()
     Y_train = np.ma.array(Y_train, mask=Y_train <= 0, hard_mask=True, copy=False)
 
-    # print(Y_train)
     Y_train_test = Y_train_test.toarray()
     Y_train_test = np.ma.array(Y_train_test, mask=Y_train_test <= 0, hard_mask=True, copy=False)
-    print(np.ma.filled(Y_train_test, 0).mean())
-    print(Y_train_test.mean())
+
     prob_obs = Y_train.count() / Y_train.size     # P(O=1)
     p_y_o_list = {}
     p_y_r = {}
+
     for r in range(1, 6):
         p_y_r_given_obs = Y_train[Y_train == r].count() / Y_train.count()    # P(Y=r|O=1)
         p_y_o_list[r] = p_y_r_given_obs
