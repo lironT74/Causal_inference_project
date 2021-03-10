@@ -2,7 +2,8 @@ import numpy as np
 from scipy.optimize import minimize
 from numpy.linalg import norm
 from LoadData import load_yahoo
-from collections import OrderedDict
+from collections import Counter
+from scipy.sparse import dok_matrix
 
 
 def params2vec(V, W, a, b, c):
@@ -29,14 +30,20 @@ def vec2params(params, num_of_users, num_of_items, inner_dim):
 def objective_gradient(params_vec, y_observed, y_test, propensities,
                        num_of_users, num_of_items, inner_dim, lam, delta_type):
     V, W, a, b, c = vec2params(params_vec, num_of_users, num_of_items, inner_dim)
+    print(f'V: {V}')
+    print(f'W: {W}')
 
     scale = num_of_users * num_of_items
     scores = np.matmul(V, W.T) + np.array([a]).T + b + c
     delta = y_observed-scores
 
     train_error = y_observed[y_observed != 0]-scores[y_observed != 0]
+
     # print(y_test[y_test != 0].shape)
     test_error = y_test[y_test != 0] - scores[y_test != 0]
+
+
+
     if delta_type == 'MSE':
         delta = delta ** 2
         train_error = train_error ** 2
@@ -90,10 +97,10 @@ def objective_gradient(params_vec, y_observed, y_test, propensities,
     print(f'Gradient norm: {norm(gradient)}')
     print(f'Train error: {train_error.sum()/y_observed[y_observed!=0].size}')
     print(f'Test error: {test_error_val}')
+    print(f'{scores}')
 
-
-    with open(f'param_search_{delta_type}.txt', 'a') as f:
-        f.write(f"{lam}_{inner_dim}_{test_error_val}\n")
+    # with open(f'param_search_{delta_type}.txt', 'a') as f:
+    #     f.write(f"{lam}_{inner_dim}_{test_error_val}\n")
 
     return objective, gradient
 
@@ -154,7 +161,9 @@ def get_observed_and_inverse_yahoo():
 
     propensities = Y_train.copy()
     for r in range(1, 6):
-        propensities[propensities == r] = p_y_o_dict[r]
+        # propensities[propensities == r] = p_y_o_dict[r]
+        propensities[propensities == r] = 1
+
     return Y_train, Y_test_test, propensities
 
 def calc_test_score(params, y_test, delta_type):
@@ -174,42 +183,106 @@ def calc_test_score(params, y_test, delta_type):
 
 def lowest_test_error():
 
-    acc_dict = OrderedDict()
+    acc_dict = Counter()
     with open('param_search_MSE.txt', 'r') as f:
         lines = f.read().splitlines()
 
         for line in lines:
             lam, d, acc = line.split('_')
 
+            acc = float(acc)
+
             if (lam, d) not in acc_dict:
                 acc_dict[(lam, d)] = acc
 
-            elif acc_dict[(lam, d)] < acc:
+            if acc_dict[(lam, d)] > acc:
                 acc_dict[(lam, d)] = acc
 
 
-    for (lam, d), acc in acc_dict.items():
-        print(f"lambda={lam}, inner dim = {d}, test acc = {acc}")
+    acc_dict = acc_dict.most_common()
+
+    for (key, acc) in acc_dict:
+        print(f"params={key}, test acc = {acc}")
+
 
 
 if __name__ == '__main__':
+
     Y_train, Y_test_test, propensities = get_observed_and_inverse_yahoo()
 
-    possible_d = [5, 10, 20, 40]
-    possible_lam = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+    # Y_train = np.array([[0, 1, 3, 5, 4, 3],
+    #                     [2, 0, 0, 5, 3, 1],
+    #                     [0, 0, 5, 1, 5, 0],
+    #                     [1, 1, 0, 1, 1, 1],
+    #                     [2, 3, 0, 0, 0, 1],
+    #                     [3, 4, 2, 0, 0, 1]])
+
+    # Y_test_test = np.array([[3, 1, 0, 0, 0, 0],
+    #                         [0, 1, 2, 0, 0, 0],
+    #                         [0, 0, 0, 1, 5, 0],
+    #                         [0, 0, 0, 0, 0, 0],
+    #                         [0, 0, 0, 0, 0, 0],
+    #                         [0, 0, 0, 0, 0, 0]])
+
+
+    Y_train = np.array([[3, 1, 3, 5, 4, 3],
+                        [2, 4, 2, 5, 3, 1],
+                        [2, 3, 5, 1, 5, 4],
+                        [1, 1, 4, 1, 1, 1],
+                        [2, 3, 2, 4, 2, 1],
+                        [3, 4, 2, 1, 3, 1]])
+
+
+    Y_test_test = Y_train.copy()
+
+
+    propensities = np.zeros(Y_train.shape)
+
+    propensities[Y_train != 0] = 1
+
+    num_of_items, num_of_users = Y_train.shape
+    inner_dim = 3
+
+    V = np.random.rand(num_of_users, inner_dim)
+    W = np.random.rand(num_of_items, inner_dim)
+
+    # V = np.ones((num_of_users, inner_dim))
+    # W = np.ones((num_of_items, inner_dim))
+
+    a = np.zeros(num_of_users)
+    b = np.zeros(num_of_items)
+    c = np.zeros(1)
+
+    x0 = params2vec(V, W, a, b, c)
+
+
+    # print('blu')
+    # print(x0)
+    # new_V, new_W, new_a, new_b, new_c = vec2params(x0, num_of_users, num_of_items, inner_dim)
+
+
+    x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B', options={'maxiter': 20},
+                 args=(Y_train, Y_test_test, propensities, num_of_users, num_of_items, inner_dim, 1, 'MSE'))
+
+
+
+
+    # possible_d = [5, 10, 20, 40]
+    # possible_lam = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
 
     # best_error = np.inf
     # best_params = (possible_lam[0], possible_d[0])
 
-    for d in possible_d:
-        for lam in possible_lam:
-            print(f"lambda: {lam}, inner dimension: {d}:")
-            train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=d, lam=lam)
+    # for d in possible_d:
+    #     for lam in possible_lam:
+    #         print(f"lambda: {lam}, inner dimension: {d}:")
+    #         train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=d, lam=lam)
 
-    lowest_test_error()
+    # lowest_test_error()
 
 
-    # res = train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=inner_dim, lam=1)
+
+    # res = train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=5, lam=1)
 
 
     # x = res.x
