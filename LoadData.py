@@ -13,20 +13,20 @@ def df_to_dict(df, first_key, second_key, value_key):
 
 def read_yahoo(path="data/yahoo_data"):
     column_names = ['user_id', 'song_id', 'rating']
-    # df_train = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
+    df_train = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
     df_test = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-test.txt", '\t', names=column_names)
 
     indexes = np.random.permutation(5400)
     df_test_test = df_test.iloc[indexes[:int(5400*0.95)]]
     df_train_test = df_test.iloc[indexes[int(5400*0.95):]]
 
-    # user2song_train = df_to_dict(df_train, 'user_id', 'song_id', 'rating')
+    user2song_train = df_to_dict(df_train, 'user_id', 'song_id', 'rating')
     user2song_train_test = df_to_dict(df_train_test, 'user_id', 'song_id', 'rating')
     user2song_test_test = df_to_dict(df_test_test, 'user_id', 'song_id', 'rating')
 
 
-    # with open(path+'/user2song_train.pkl', 'wb') as f:
-    #     pickle.dump(user2song_train, f)
+    with open(path+'/user2song_train.pkl', 'wb') as f:
+        pickle.dump(user2song_train, f)
 
     # with open(path+'/user2song_test.pkl', 'wb') as f:
     #     pickle.dump(user2song_test, f)
