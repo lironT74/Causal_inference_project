@@ -82,15 +82,18 @@ def objective_gradient(params_vec, y_observed, y_test, propensities,
     globalBGradient += 2*scaledPenalty*c
 
     gradient = params2vec(userVGradient, itemVGradient, userBGradient, itemBGradient, globalBGradient)
+
+    test_error_val = test_error.sum()/y_test[y_test!=0].size
+
     print()
     print(f'Objective: {objective}')
     print(f'Gradient norm: {norm(gradient)}')
     print(f'Train error: {train_error.sum()/y_observed[y_observed!=0].size}')
-    print(f'Test error: {test_error.sum()/y_test[y_test!=0].size}')
+    print(f'Test error: {test_error_val}')
 
 
     with open(f'param_search_{delta_type}.txt', 'a') as f:
-        f.write(f"{lam}_{inner_dim}_{test_error}\n")
+        f.write(f"{lam}_{inner_dim}_{test_error_val}\n")
 
     return objective, gradient
 
@@ -198,9 +201,12 @@ if __name__ == '__main__':
     # best_error = np.inf
     # best_params = (possible_lam[0], possible_d[0])
 
-    for d in possible_d:
-        for lam in possible_lam:
-            train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=d, lam=lam)
+    # for d in possible_d:
+    #     for lam in possible_lam:
+    #         print(f"lambda: {lam}, inner dimension: {d}:")
+    #         train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=d, lam=lam)
+
+    lowest_test_error()
 
 
     # res = train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=inner_dim, lam=1)
