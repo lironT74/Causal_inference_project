@@ -122,7 +122,7 @@ def train_mf(y_observed, y_test, propensities, delta_type, inner_dim=1000, lam=1
     # print('blu')
     # print(x0)
     # new_V, new_W, new_a, new_b, new_c = vec2params(x0, num_of_users, num_of_items, inner_dim)
-    x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B', options = {'maxiter': 100},
+    x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B', options = {'maxiter': 20},
                  args=(y_observed, y_test, inverse_propensities, num_of_users, num_of_items, inner_dim, lam, delta_type)
     )
 
@@ -196,23 +196,20 @@ if __name__ == '__main__':
     Y_train, Y_test_test, propensities = get_observed_and_inverse_yahoo()
 
     possible_d = [5, 10, 20, 40]
-    possible_lam = [1e-6, 1e-5, 1e-4, 0.001, 0.01, 0.1, 1]
+    possible_lam = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
 
     # best_error = np.inf
     # best_params = (possible_lam[0], possible_d[0])
 
-    # for d in possible_d:
-    #     for lam in possible_lam:
-    #         print(f"lambda: {lam}, inner dimension: {d}:")
-    #         train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=d, lam=lam)
+    for d in possible_d:
+        for lam in possible_lam:
+            print(f"lambda: {lam}, inner dimension: {d}:")
+            train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=d, lam=lam)
 
     lowest_test_error()
 
 
     # res = train_mf(Y_train, Y_test_test, propensities, 'MSE', inner_dim=inner_dim, lam=1)
-
-
-
 
 
     # x = res.x
