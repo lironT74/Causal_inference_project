@@ -159,18 +159,17 @@ def get_error(vec, Y, type_loss='MSE'):
 
 
 if __name__ == '__main__':
-    inner_dim = 10
 
     Y, Y_test, inverse_propensities_matrix = read_yahoo(path="data/yahoo_data")
     shape = Y.shape
-    vec = get_problem_parameters(inner_dim, shape)
 
-    lam = 1.0
     type_loss = 'MSE'
 
+    for lam in [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]:
 
-    for lam in [0.00001, 0.0001, 0.001, 0.01, 0.1, 1]:
         for inner_dim in [5, 10, 20, 40]:
+
+            vec = get_problem_parameters(inner_dim, shape)
             x = minimize(get_objective, x0=vec, jac=get_gradient, method='L-BFGS-B', options={'maxiter': 20},
                          args=(inverse_propensities_matrix, Y, Y_test, inner_dim, shape, lam, type_loss))
 
