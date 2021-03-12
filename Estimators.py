@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, fmin_l_bfgs_b
 from numpy.linalg import norm
 from LoadData import load_yahoo
 from collections import Counter
@@ -30,11 +30,12 @@ def vec2params(params, num_of_users, num_of_items, inner_dim):
 def objective_gradient(params_vec, y_observed, y_test, propensities,
                        num_of_users, num_of_items, inner_dim, lam, delta_type):
     V, W, a, b, c = vec2params(params_vec, num_of_users, num_of_items, inner_dim)
-    print(f'V: {V}')
-    print(f'W: {W}')
+    # print(f'V: {V}')
+    # print(f'W: {W}')
 
     scale = num_of_users * num_of_items
     scores = np.matmul(V, W.T) + np.array([a]).T + b + c
+    # print(f'scores: {scores}')
     delta = y_observed-scores
 
     train_error = y_observed[y_observed != 0]-scores[y_observed != 0]
@@ -70,13 +71,18 @@ def objective_gradient(params_vec, y_observed, y_test, propensities,
 
     userVGradient = gradientMultiplier @ W
     itemVGradient = gradientMultiplier.T @ V
-
+    # print("Gradeint multiplier: ", gradientMultiplier)
     userBGradient = gradientMultiplier.sum(1)
     itemBGradient = gradientMultiplier.sum(0)
     globalBGradient = gradientMultiplier.sum()
+    #
+    # userBGradient = np.zeros(num_of_users)
+    # itemBGradient = np.zeros(num_of_items)
+    # globalBGradient = np.zeros(1)
 
-    scaledPenalty = 1.0 * lam * scale / (num_of_users + num_of_items)
-    scaledPenalty /= (inner_dim + 1)
+    # scaledPenalty = 1.0 * lam * scale / (num_of_users + num_of_items)
+    # scaledPenalty /= (inner_dim + 1)
+    scaledPenalty = lam
 
     regularization = lam*(norm(V, 'fro')**2+norm(W, 'fro')**2+norm(a)**2+norm(b)**2+c**2)
     objective += regularization
@@ -88,7 +94,7 @@ def objective_gradient(params_vec, y_observed, y_test, propensities,
     itemBGradient += 2*scaledPenalty*b
     globalBGradient += 2*scaledPenalty*c
 
-    gradient = params2vec(userVGradient, itemVGradient, userBGradient, itemBGradient, globalBGradient)
+    gradient = params2vec(userVGradient, itemVGradient, -userBGradient, -itemBGradient, -globalBGradient)
 
     test_error_val = test_error.sum()/y_test[y_test!=0].size
 
@@ -97,7 +103,16 @@ def objective_gradient(params_vec, y_observed, y_test, propensities,
     print(f'Gradient norm: {norm(gradient)}')
     print(f'Train error: {train_error.sum()/y_observed[y_observed!=0].size}')
     print(f'Test error: {test_error_val}')
-    print(f'{scores}')
+    print(f'norm grad v: {norm(userVGradient)}')
+    print(f'scores: {scores}')
+    # print(f'V Gradient: {userVGradient}')
+    # print(f'V: {V}')
+    # print(f'a Gradient: {userBGradient}')
+    # print(f'a: {a}')
+    # print(f'b Gradient: {itemBGradient}')
+    # print(f'b: {b}')
+    # print(f'c gradeint: {globalBGradient}')
+    # print(f'c: {c}')
 
     # with open(f'param_search_{delta_type}.txt', 'a') as f:
     #     f.write(f"{lam}_{inner_dim}_{test_error_val}\n")
@@ -119,8 +134,8 @@ def train_mf(y_observed, y_test, propensities, delta_type, inner_dim=1000, lam=1
     # print(y_observed[y_observed != 0].size)
     # print(np.argwhere(y_observed==0))
 
-    V = np.random.rand(num_of_users, inner_dim)
-    W = np.random.rand(num_of_items, inner_dim)
+    V = 2*np.random.randn(num_of_users, inner_dim)+2.5
+    W = 2*np.random.randn(num_of_items, inner_dim)+2.5
     a = np.zeros(num_of_users, dtype=np.longdouble)
     b = np.zeros(num_of_items, dtype=np.longdouble)
     c = np.zeros(1)
@@ -129,7 +144,8 @@ def train_mf(y_observed, y_test, propensities, delta_type, inner_dim=1000, lam=1
     # print('blu')
     # print(x0)
     # new_V, new_W, new_a, new_b, new_c = vec2params(x0, num_of_users, num_of_items, inner_dim)
-    x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B', options = {'maxiter': 20},
+    options = {'maxiter': 2000, 'disp': False, 'gtol': 1e-5, 'ftol': 1e-5, 'maxcor': 50}
+    x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B', options=options, tol=1e-5,
                  args=(y_observed, y_test, inverse_propensities, num_of_users, num_of_items, inner_dim, lam, delta_type)
     )
 
@@ -208,68 +224,86 @@ def lowest_test_error():
 
 if __name__ == '__main__':
 
-
-    check = np.ones((15400, 10000))
-
-
     # Y_train, Y_test_test, propensities = get_observed_and_inverse_yahoo()
+
+
+
+    # x = train_mf(Y_train,Y_test_test, propensities, delta_type='MSE', inner_dim=5, lam=1)
+
+    # Y_train = np.array([[0, 1, 3, 5, 4, 3],
+    #                     [2, 0, 0, 5, 3, 1],
+    #                     [0, 0, 5, 1, 5, 0],
+    #                     [1, 1, 0, 1, 1, 1],
+    #                     [2, 3, 0, 0, 0, 1],
+    #                     [3, 4, 2, 0, 0, 1]])
     #
-    # # Y_train = np.array([[0, 1, 3, 5, 4, 3],
-    # #                     [2, 0, 0, 5, 3, 1],
-    # #                     [0, 0, 5, 1, 5, 0],
-    # #                     [1, 1, 0, 1, 1, 1],
-    # #                     [2, 3, 0, 0, 0, 1],
-    # #                     [3, 4, 2, 0, 0, 1]])
+    # Y_test_test = np.array([[3, 1, 0, 0, 0, 0],
+    #                         [0, 1, 2, 0, 0, 0],
+    #                         [0, 0, 0, 1, 5, 0],
+    #                         [0, 0, 0, 0, 0, 0],
+    #                         [0, 0, 0, 0, 0, 0],
+    #                         [0, 0, 0, 0, 0, 0]])
     #
-    # # Y_test_test = np.array([[3, 1, 0, 0, 0, 0],
-    # #                         [0, 1, 2, 0, 0, 0],
-    # #                         [0, 0, 0, 1, 5, 0],
-    # #                         [0, 0, 0, 0, 0, 0],
-    # #                         [0, 0, 0, 0, 0, 0],
-    # #                         [0, 0, 0, 0, 0, 0]])
+
+    Y_train = np.array([[3, 1, 3, 5, 4, 3],
+                        [2, 4, 2, 5, 3, 1],
+                        [2, 3, 5, 1, 5, 4],
+                        [1, 1, 4, 1, 1, 1],
+                        [2, 3, 2, 4, 2, 1],
+                        [3, 4, 2, 1, 3, 1],
+                        [5, 3, 3, 5, 1, 1]])
+
+
+    Y_test_test = Y_train.copy()
+
     #
-    #
-    # Y_train = np.array([[3, 1, 3, 5, 4, 3],
-    #                     [2, 4, 2, 5, 3, 1],
-    #                     [2, 3, 5, 1, 5, 4],
-    #                     [1, 1, 4, 1, 1, 1],
-    #                     [2, 3, 2, 4, 2, 1],
-    #                     [3, 4, 2, 1, 3, 1]])
-    #
-    #
-    # Y_test_test = Y_train.copy()
-    #
-    #
-    # propensities = np.zeros(Y_train.shape)
-    #
-    # propensities[Y_train != 0] = 1
-    #
-    # num_of_items, num_of_users = Y_train.shape
-    # inner_dim = 3
-    #
-    # V = np.random.rand(num_of_users, inner_dim)
-    # W = np.random.rand(num_of_items, inner_dim)
-    #
-    # # V = np.ones((num_of_users, inner_dim))
-    # # W = np.ones((num_of_items, inner_dim))
-    #
-    # a = np.zeros(num_of_users)
-    # b = np.zeros(num_of_items)
-    # c = np.zeros(1)
-    #
-    # x0 = params2vec(V, W, a, b, c)
-    #
+    propensities = np.zeros(Y_train.shape)
+
+    propensities[Y_train != 0] = 1
+
+    num_of_users, num_of_items = Y_train.shape
+    inner_dim = 10
+
+    V = np.random.rand(num_of_users, inner_dim)
+    W = np.random.rand(num_of_items, inner_dim)
+
+    # V = np.ones((num_of_users, inner_dim))
+    # W = np.ones((num_of_items, inner_dim))
+
+    a = np.zeros(num_of_users)
+    b = np.zeros(num_of_items)
+    c = np.zeros(1)
+
+    x0 = params2vec(V, W, a, b, c)
+
+
     #
     # # print('blu')
     # # print(x0)
     # # new_V, new_W, new_a, new_b, new_c = vec2params(x0, num_of_users, num_of_items, inner_dim)
     #
+    options = {'maxiter': 2000, 'disp': False, 'gtol': 1e-5, 'ftol': 1e-5, 'maxcor': 50}
     #
-    # x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B', options={'maxiter': 20},
-    #              args=(Y_train, Y_test_test, propensities, num_of_users, num_of_items, inner_dim, 1, 'MSE'))
 
+    x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B',
+                 args=(Y_train, Y_test_test, propensities, num_of_users, num_of_items, inner_dim, 1, 'MSE'))
 
+    # def ob_grad(x):
+    #     objecive = x**2-100
+    #     grad = 2*x
+    #     print(f'Objective: {objecive}')
+    #     print(f'Gradient norm: {grad**2}')
+    #     return objecive, grad
+    #
+    # x = minimize(ob_grad, x0=100, jac=True, method='L-BFGS-B')
+    # x = fmin_l_bfgs_b(objective_gradient, x0=x0,
+    #              args=(Y_train, Y_test_test, propensities, num_of_users, num_of_items, inner_dim, 1, 'MAE'))
 
+    # print(x[0])
+    # V, W, a, b, c = vec2params(x[0], num_of_users, num_of_items, inner_dim)
+
+    # print('Result')
+    # print(np.matmul(V, W.T) + np.array([a]).T + b + c)
 
     # possible_d = [5, 10, 20, 40]
     # possible_lam = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
