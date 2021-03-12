@@ -208,61 +208,65 @@ def lowest_test_error():
 
 if __name__ == '__main__':
 
-    Y_train, Y_test_test, propensities = get_observed_and_inverse_yahoo()
 
-    # Y_train = np.array([[0, 1, 3, 5, 4, 3],
-    #                     [2, 0, 0, 5, 3, 1],
-    #                     [0, 0, 5, 1, 5, 0],
-    #                     [1, 1, 0, 1, 1, 1],
-    #                     [2, 3, 0, 0, 0, 1],
-    #                     [3, 4, 2, 0, 0, 1]])
-
-    # Y_test_test = np.array([[3, 1, 0, 0, 0, 0],
-    #                         [0, 1, 2, 0, 0, 0],
-    #                         [0, 0, 0, 1, 5, 0],
-    #                         [0, 0, 0, 0, 0, 0],
-    #                         [0, 0, 0, 0, 0, 0],
-    #                         [0, 0, 0, 0, 0, 0]])
+    check = np.ones((15400, 10000))
 
 
-    Y_train = np.array([[3, 1, 3, 5, 4, 3],
-                        [2, 4, 2, 5, 3, 1],
-                        [2, 3, 5, 1, 5, 4],
-                        [1, 1, 4, 1, 1, 1],
-                        [2, 3, 2, 4, 2, 1],
-                        [3, 4, 2, 1, 3, 1]])
-
-
-    Y_test_test = Y_train.copy()
-
-
-    propensities = np.zeros(Y_train.shape)
-
-    propensities[Y_train != 0] = 1
-
-    num_of_items, num_of_users = Y_train.shape
-    inner_dim = 3
-
-    V = np.random.rand(num_of_users, inner_dim)
-    W = np.random.rand(num_of_items, inner_dim)
-
-    # V = np.ones((num_of_users, inner_dim))
-    # W = np.ones((num_of_items, inner_dim))
-
-    a = np.zeros(num_of_users)
-    b = np.zeros(num_of_items)
-    c = np.zeros(1)
-
-    x0 = params2vec(V, W, a, b, c)
-
-
-    # print('blu')
-    # print(x0)
-    # new_V, new_W, new_a, new_b, new_c = vec2params(x0, num_of_users, num_of_items, inner_dim)
-
-
-    x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B', options={'maxiter': 20},
-                 args=(Y_train, Y_test_test, propensities, num_of_users, num_of_items, inner_dim, 1, 'MSE'))
+    # Y_train, Y_test_test, propensities = get_observed_and_inverse_yahoo()
+    #
+    # # Y_train = np.array([[0, 1, 3, 5, 4, 3],
+    # #                     [2, 0, 0, 5, 3, 1],
+    # #                     [0, 0, 5, 1, 5, 0],
+    # #                     [1, 1, 0, 1, 1, 1],
+    # #                     [2, 3, 0, 0, 0, 1],
+    # #                     [3, 4, 2, 0, 0, 1]])
+    #
+    # # Y_test_test = np.array([[3, 1, 0, 0, 0, 0],
+    # #                         [0, 1, 2, 0, 0, 0],
+    # #                         [0, 0, 0, 1, 5, 0],
+    # #                         [0, 0, 0, 0, 0, 0],
+    # #                         [0, 0, 0, 0, 0, 0],
+    # #                         [0, 0, 0, 0, 0, 0]])
+    #
+    #
+    # Y_train = np.array([[3, 1, 3, 5, 4, 3],
+    #                     [2, 4, 2, 5, 3, 1],
+    #                     [2, 3, 5, 1, 5, 4],
+    #                     [1, 1, 4, 1, 1, 1],
+    #                     [2, 3, 2, 4, 2, 1],
+    #                     [3, 4, 2, 1, 3, 1]])
+    #
+    #
+    # Y_test_test = Y_train.copy()
+    #
+    #
+    # propensities = np.zeros(Y_train.shape)
+    #
+    # propensities[Y_train != 0] = 1
+    #
+    # num_of_items, num_of_users = Y_train.shape
+    # inner_dim = 3
+    #
+    # V = np.random.rand(num_of_users, inner_dim)
+    # W = np.random.rand(num_of_items, inner_dim)
+    #
+    # # V = np.ones((num_of_users, inner_dim))
+    # # W = np.ones((num_of_items, inner_dim))
+    #
+    # a = np.zeros(num_of_users)
+    # b = np.zeros(num_of_items)
+    # c = np.zeros(1)
+    #
+    # x0 = params2vec(V, W, a, b, c)
+    #
+    #
+    # # print('blu')
+    # # print(x0)
+    # # new_V, new_W, new_a, new_b, new_c = vec2params(x0, num_of_users, num_of_items, inner_dim)
+    #
+    #
+    # x = minimize(objective_gradient, x0=x0, jac=True, method='L-BFGS-B', options={'maxiter': 20},
+    #              args=(Y_train, Y_test_test, propensities, num_of_users, num_of_items, inner_dim, 1, 'MSE'))
 
 
 
