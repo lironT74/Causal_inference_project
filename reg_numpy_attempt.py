@@ -59,8 +59,8 @@ def get_problem_parameters(inner_dim, shape):
 
     num_users, num_songs = shape
 
-    V = np.random.rand(num_users, inner_dim)
-    W = np.random.rand(num_songs, inner_dim)
+    V = np.random.randn(num_users, inner_dim)
+    W = np.random.randn(num_songs, inner_dim)
 
     # A = np.random.rand(num_users, 1)
     # B = np.random.rand(1, num_songs)
@@ -116,7 +116,7 @@ def get_objective(vec, inverse_propensities_matrix, Y, Y_test, inner_dim, shape,
                             np.square(C))
 
 
-    print(f"test error is: {get_error(vec, Y_test, type_loss)} {lam, inner_dim}")
+    print(f"test error is: {get_error(vec, Y_test, shape, inverse_propensities_matrix, inner_dim, type_loss)} {lam, inner_dim}")
 
     return sum_delta_propensities + regularization
 
@@ -145,17 +145,31 @@ def get_gradient(vec, inverse_propensities_matrix, Y, Y_test, inner_dim, shape, 
     return np.concatenate([V_grad.flatten(), W_grad.flatten(), A_grad.flatten(), B_grad.flatten(), C_grad.flatten()])
 
 
-def get_error(vec, Y, type_loss='MSE'):
+def get_error(vec, Y, shape, inverse_propensities_matrix, inner_dim, type_loss='MSE'):
     V, W, A, B, C = get_params_from_vec(vec, inner_dim, shape)
 
     Y_hat = get_y_hat(V, W, A, B, C)
 
-    Y_hat[Y == 0] = 0
+    # Y_hat[Y == 0] = 0
+    # if type_loss == 'MSE':
+    #     return np.sum((np.square(Y - Y_hat))) / len(Y[Y != 0])
+    # else:
+    #     return np.sum((np.abs(Y - Y_hat))) / len(Y[Y != 0])
 
+    delta = Y_hat - Y
     if type_loss == 'MSE':
-        return np.sum((np.square(Y - Y_hat))) / len(Y[Y != 0])
-    else:
-        return np.sum((np.abs(Y - Y_hat))) / len(Y[Y != 0])
+        delta = np.square(delta)
+    elif type_loss == 'MAE':
+        delta = np.ma.abs(delta)
+
+    numUsers, numItems = shape
+    scale = numUsers * numItems
+
+    observedError = delta * inverse_propensities_matrix
+    cumulativeError = np.ma.sum(observedError)
+    vanillaMetric = cumulativeError / scale
+
+    return vanillaMetric
 
 
 if __name__ == '__main__':
@@ -165,11 +179,16 @@ if __name__ == '__main__':
 
     type_loss = 'MSE'
 
-    for lam in [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]:
+    # lambdas = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+    # lambdas.reverse()
+    # inner_dims = [40, 20, 10, 5]
+    # for lam in lambdas:
+    #     for inner_dim in inner_dims:
+    #         vec = get_problem_parameters(inner_dim, shape)
+    #         x = minimize(get_objective, x0=vec, jac=get_gradient, method='L-BFGS-B', options={'maxiter': 20},
+    #                      args=(inverse_propensities_matrix, Y, Y_test, inner_dim, shape, lam, type_loss))
 
-        for inner_dim in [5, 10, 20, 40]:
 
-            vec = get_problem_parameters(inner_dim, shape)
-            x = minimize(get_objective, x0=vec, jac=get_gradient, method='L-BFGS-B', options={'maxiter': 20},
-                         args=(inverse_propensities_matrix, Y, Y_test, inner_dim, shape, lam, type_loss))
-
+    vec = get_problem_parameters(20, shape)
+    x = minimize(get_objective, x0=vec, jac=get_gradient, method='L-BFGS-B', options={'maxiter': 20},
+                 args=(inverse_propensities_matrix, Y, Y_test, 20, shape, 1, type_loss))
