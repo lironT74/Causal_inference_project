@@ -8,7 +8,6 @@ from scipy.optimize import minimize
 def get_numpy(df_train, df_test):
 
     num_users = df_train['user_id'].nunique()
-
     num_songs = df_train['song_id'].nunique()
 
     train_matrix = np.zeros((num_users, num_songs))
@@ -23,7 +22,7 @@ def get_numpy(df_train, df_test):
     return train_matrix, test_matrix
 
 
-def get_inverse_propensities(df_train_propensities, df_train, train_matrix):
+def get_inverse_propensities(df_train_propensities, df_train, train_matrix, return_p_y_r=False):
 
     p_y_r = dict(df_train_propensities['rating'].value_counts() / len(df_train_propensities))
     p_y_r_o = dict(df_train['rating'].value_counts() / len(df_train))
@@ -36,10 +35,12 @@ def get_inverse_propensities(df_train_propensities, df_train, train_matrix):
     p_f_func = np.vectorize(p_f)
     propensities_matrix = p_f_func(train_matrix)
 
+    if return_p_y_r:
+        return propensities_matrix, p_y_r
     return propensities_matrix
 
 
-def read_yahoo(path="data/yahoo_data"):
+def read_yahoo(path="data/yahoo_data", is_cv = False):
     column_names = ['user_id', 'song_id', 'rating']
 
     df_train = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
@@ -50,7 +51,13 @@ def read_yahoo(path="data/yahoo_data"):
     df_test = df_test_all[~msk]
 
     train_matrix, test_matrix = get_numpy(df_train, df_test)
+
     inverse_propensities_matrix = get_inverse_propensities(df_train_propensities, df_train, train_matrix)
+
+
+    if is_cv:
+        return df_train, df_test, df_train_propensities, train_matrix, test_matrix, inverse_propensities_matrix
+
 
     return train_matrix, test_matrix, inverse_propensities_matrix
 
