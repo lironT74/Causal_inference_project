@@ -202,7 +202,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
                 output_txt = f'iteration: {iteration} \t delta type: {delta_type}\t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t test err: {test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
                 print(output_txt)
                 f.write(f'{output_txt}\n')
-                if best_test_err < test_err:
+                if best_test_err > test_err:
                     best_test_err = test_err
 
             def closure():
