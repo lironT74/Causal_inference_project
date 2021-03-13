@@ -140,8 +140,8 @@ def find_best_key_dict(dict_total):
 def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type):
     EPOCHS = 10
     num_users, num_items = Y_train.shape
-    inner_dims = [5, 10, 20, 40]
-    lams = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]
+    inner_dims = [5]
+    lams = [1e-4, 1e-3, 1e-2, 1e-1, 1]
     Y_train = torch.from_numpy(Y_train)
     Y_val = torch.from_numpy(Y_val)
     train_propensities = torch.from_numpy(train_propensities)
