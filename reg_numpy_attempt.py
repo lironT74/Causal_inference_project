@@ -166,7 +166,7 @@ def get_error(vec, Y, shape, inverse_propensities_matrix, inner_dim, type_loss='
     scale = numUsers * numItems
 
     observedError = delta * inverse_propensities_matrix
-    cumulativeError = np.ma.sum(observedError)
+    cumulativeError = np.sum(observedError)
     vanillaMetric = cumulativeError / scale
 
     return vanillaMetric
