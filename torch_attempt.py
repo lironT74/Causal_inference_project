@@ -137,7 +137,7 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
 def find_best_key_dict(dict_total):
     return min(dict_total, key=dict_total.get)
 
-def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type):
+def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params_'):
     EPOCHS = 10
     num_users, num_items = Y_train.shape
     inner_dims = [5]
@@ -149,7 +149,7 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
 
     val_err_dict = {}
     print()
-    with open(f'torch_find_params_{delta_type}_CV.txt', 'a') as f:
+    with open(f'{path_to_save_txt}_{delta_type}_CV.txt', 'a') as f:
         for inner_dim in inner_dims:
             for lam in lams:
                 model = MF(num_users, num_items, inner_dim, Y_train, Y_val, train_propensities, delta_type, lam)
@@ -177,8 +177,7 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
 
     return val_err_dict
 
-def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam):
-    EPOCHS = 10
+def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam, path_to_save_txt='test_error', EPOCHS = 10):
     num_users, num_items = Y.shape
     Y = torch.from_numpy(Y)
     Y_test = torch.from_numpy(Y_test)
@@ -188,7 +187,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
     best_test_err = float('inf')
     print()
     print()
-    with open(f'test_error_{delta_type}.txt', 'a') as f:
+    with open(f'{path_to_save_txt}_{delta_type}.txt', 'a') as f:
         model = MF(num_users, num_items, inner_dim, Y, Y_test, train_propensities, delta_type, lam)
 
         optimizer = torch.optim.LBFGS(model.parameters())

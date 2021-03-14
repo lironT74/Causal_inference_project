@@ -1,14 +1,29 @@
 
 if __name__ == '__main__':
-    with open('torch_find_params_mse.txt', 'r')as file:
+    with open('test_error_MSE.txt', 'r')as file:
+        err_lst = []
+        best_err = float('inf')
         for index, line in enumerate(file):
-            splitted_line = line.split()[1:]
-            test_err = splitted_line[7]
-            lam = splitted_line[9]
-            inner_dim = splitted_line[11]
-            if index == 0 or test_err < best_test_err:
-                best_test_err = test_err
-                best_lam  = lam
-                best_dim = inner_dim
+            splitted_line = line.split()
+            test_err = float(splitted_line[14])
+            if test_err < best_err:
+                best_err = test_err
+            if (index + 1) % 10 == 0:
+                err_lst.append(best_err)
+                best_err = float('inf')
+        print('MSE test error: ', sum(err_lst)/len(err_lst))
 
-        print(f'best test err: {best_test_err} \t lam: {best_lam} \t inner_dim: {best_dim} ')
+    with open('test_error_MAE.txt', 'r')as file:
+        err_lst = []
+        best_err = float('inf')
+        for index, line in enumerate(file):
+            splitted_line = line.split()
+            test_err = float(splitted_line[14])
+            if test_err < best_err:
+                best_err = test_err
+            if (index + 1) % 10 == 0:
+                err_lst.append(best_err)
+                best_err = float('inf')
+            if (index + 1) % 50 == 0:
+                break
+        print('MAE test error: ', sum(err_lst)/len(err_lst))

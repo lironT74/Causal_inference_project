@@ -1,77 +1,62 @@
 import torch.nn as nn
 import torch
 import numpy as np
-from reg_numpy_attempt import read_yahoo, get_inverse_propensities
+from reg_numpy_attempt import get_numpy
+import tqdm
+import pandas as pd
+from torch_attempt import train_model_test, train_model_CV, find_best_key_dict
 from sklearn.model_selection import KFold
+
 
 seed = 100
 
-class MF(nn.Module):
-    def __init__(self, num_users, num_items, inner_dim, Y, Y_test, inv_propensities, delta_type, lam):
-        super(MF, self).__init__()
-        self.num_users = num_users
-        self.num_items = num_items
-        self.inner_dim = inner_dim
-        self.V = nn.Parameter(torch.rand((num_users, inner_dim)))
-        self.W = nn.Parameter(torch.rand((num_items, inner_dim)))
-        self.a = nn.Parameter(torch.zeros(num_users))
-        self.b = nn.Parameter(torch.zeros(num_items))
-        self.c = nn.Parameter(torch.zeros(1))
-        self.inv_propensities = inv_propensities
-        self.Y = Y
-        self.Y_test = Y_test
-        self.delta_type = delta_type
-        self.lam = lam
-        self.scale = self.num_users * self.num_items
+def get_inverse_propensities_items(df_train_propensities, df_train, train_matrix, inter_coef, return_p_y_r=False):
 
-    def forward(self):
-        scaledPenalty = 1.0 * self.lam * self.scale / (self.num_users + self.num_items)
-        scaledPenalty /= (self.inner_dim + 1)
+    p_y_r = dict(df_train_propensities['rating'].value_counts() / len(df_train_propensities))
+    p_y_r_o = dict(df_train['rating'].value_counts() / len(df_train))
+    p_o_item = dict(df_train['song_id'].value_counts() / 15400)
+    p_O_SUMS = dict(df_train['song_id'].value_counts())
+    p_o = len(df_train) / train_matrix.size
 
-        if self.delta_type == "MSE":
-            scores = self.V @ self.W.T+self.a.unsqueeze(-1)+self.b+self.c
-            diff = (self.Y - scores)**2
-        else:
-            scores = self.V @ self.W.T + self.a.unsqueeze(-1) + self.b + self.c
-            diff = torch.abs(self.Y - scores)
+    propensities = {(r, item): p_y_r_o[r]*(1-(inter_coef/(p_O_SUMS[item]+inter_coef))*p_o_item[item]+(inter_coef/(p_O_SUMS[item]+inter_coef))*p_o)*(1/p_y_r[r]) for r in p_y_r.keys() for item in p_o_item.keys()}
+    for item in p_o_item.keys():
+        propensities[(0, item)] = 0
+    p_f = lambda r, item: 1/propensities[(r, item)] if propensities[(r,item)] != 0 else 0
+    propensities_matrix = np.zeros((15400, 1000))
+    for user in range(15400):
+        for item in range(1000):
+            r = train_matrix[user, item]
+            propensities_matrix[user, item] = p_f(r, item+1)
 
-        regularization = torch.norm(self.V)**2 + torch.norm(self.W)**2 + torch.norm(self.a)**2
-        regularization += torch.norm(self.b)**2 + torch.norm(self.c)**2
-
-        diff = self.inv_propensities * diff
-
-        objective = diff.sum() + scaledPenalty * regularization
+    if return_p_y_r:
+        return propensities_matrix, p_y_r
+    return propensities_matrix
 
 
-        return objective
+def read_yahoo_items(path="data/yahoo_data", is_cv = False, inter_coef=0.5):
+    column_names = ['user_id', 'song_id', 'rating']
 
-    def calc_train_test_err(self):
-        scores = self.V @ self.W.T+self.a.unsqueeze(-1)+self.b+self.c
+    df_train = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
+    df_test_all = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-test.txt", '\t', names=column_names)
 
-        if self.delta_type == "MSE":
-            diff_train = (self.Y[self.Y != 0] - scores[self.Y != 0])**2
-            diff_test = (self.Y_test[self.Y_test != 0] - scores[self.Y_test != 0]) ** 2
-        else:
-            diff_train = torch.abs(self.Y[self.Y != 0] - scores[self.Y != 0])
-            diff_test = torch.abs(self.Y_test[self.Y_test != 0] - scores[self.Y_test != 0])
+    msk = np.random.rand(len(df_test_all)) < 0.95
+    df_train_propensities = df_test_all[msk]
+    df_test = df_test_all[~msk]
 
-        return diff_train.mean(), diff_test.mean()
+    train_matrix, test_matrix = get_numpy(df_train, df_test)
 
-    def calc_train_val_err_ips(self, train_propensities, val_propensities):
-        scores = self.V @ self.W.T+self.a.unsqueeze(-1)+self.b+self.c
-
-        if self.delta_type == "MSE":
-            diff_train = (self.Y - scores)**2
-            diff_test = (self.Y_test - scores) ** 2
-        else:
-            diff_train = torch.abs(self.Y - scores)
-            diff_test = torch.abs(self.Y_test - scores)
-
-        return (train_propensities*diff_train).mean(), (val_propensities*diff_test).mean()
+    inverse_propensities_matrix = get_inverse_propensities_items(df_train_propensities, df_train, train_matrix, inter_coef)
 
 
-def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_data", k=4):
-    df_train, df_test, df_train_propensities, Y, Y_test, inv_propensities = read_yahoo(path, is_cv=True)
+    if is_cv:
+        return df_train, df_test, df_train_propensities, train_matrix, test_matrix, inverse_propensities_matrix
+
+
+    return train_matrix, test_matrix, inverse_propensities_matrix
+
+
+def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_data", k=4, inter_coef=0.5, path_to_save_txt="dirichlet_try"):
+    df_train, df_test, df_train_propensities, Y, Y_test, inv_propensities = read_yahoo_items(path, is_cv=True, inter_coef=inter_coef)
 
     kf = KFold(n_splits=k, shuffle=True, random_state=seed)
     inner_dims = [5]
@@ -98,8 +83,8 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
             Y_val[row['user_id'] - 1, row['song_id'] - 1] = row['rating']
 
 
-        train_propensities = get_inverse_propensities(df_train_propensities, fold_train_df, Y_train)
-        val_propensities = get_inverse_propensities(df_train_propensities, fold_val_df, Y_val)
+        train_propensities = get_inverse_propensities_items(df_train_propensities, fold_train_df, Y_train, inter_coef=inter_coef)
+        val_propensities = get_inverse_propensities_items(df_train_propensities, fold_val_df, Y_val, inter_coef=inter_coef)
 
         train_propensities = train_propensities * (k / (k - 1))
         val_propensities = val_propensities * k
@@ -107,16 +92,16 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
         if delta_type is None:
 
             mse_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type="MSE")
+                                      delta_type="MSE", path_to_save_txt=path_to_save_txt)
             mae_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type="MAE")
+                                      delta_type="MAE", path_to_save_txt=path_to_save_txt)
 
             for key in mse_dict:
                 mse_dict_total[key] += mse_dict[key] / k
                 mae_dict_total[key] += mae_dict[key] / k
         else:
             curr_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type=delta_type)
+                                      delta_type=delta_type, path_to_save_txt=path_to_save_txt)
             for key in curr_dict:
                 mse_dict_total[key] += curr_dict[key] / k
 
@@ -126,104 +111,22 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
     lam_mae, dim_mae = find_best_key_dict(mae_dict_total)
 
     if delta_type is None:
-        best_test_err_mse = train_model_test(Y, Y_test, inv_propensities, iteration, "MSE", dim_mse, lam_mse)
-        best_test_err_mae = train_model_test(Y, Y_test, inv_propensities, iteration, "MAE", dim_mae, lam_mae)
+        best_test_err_mse = train_model_test(Y, Y_test, inv_propensities, iteration, "MSE", dim_mse, lam_mse,
+                                             path_to_save_txt=path_to_save_txt+'_test_error', EPOCHS=10)
+        best_test_err_mae = train_model_test(Y, Y_test, inv_propensities, iteration, "MAE", dim_mae, lam_mae,
+                                             path_to_save_txt=path_to_save_txt+'_test_error', EPOCHS=10)
     else:
-        return train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, dim_mse, lam_mse)
+        return train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, dim_mse, lam_mse,
+                                path_to_save_txt=path_to_save_txt+'_test_error', EPOCHS=10)
 
     return best_test_err_mse, best_test_err_mae
-
-
-def find_best_key_dict(dict_total):
-    return min(dict_total, key=dict_total.get)
-
-def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type):
-    EPOCHS = 10
-    num_users, num_items = Y_train.shape
-    inner_dims = [5]
-    lams = [1e-4, 1e-3, 1e-2, 1e-1, 1]
-    Y_train = torch.from_numpy(Y_train)
-    Y_val = torch.from_numpy(Y_val)
-    train_propensities = torch.from_numpy(train_propensities)
-    val_propensities = torch.from_numpy(val_propensities)
-
-    val_err_dict = {}
-    print()
-    with open(f'torch_find_params_{delta_type}_CV.txt', 'a') as f:
-        for inner_dim in inner_dims:
-            for lam in lams:
-                model = MF(num_users, num_items, inner_dim, Y_train, Y_val, train_propensities, delta_type, lam)
-
-                optimizer = torch.optim.LBFGS(model.parameters())
-                val_err_dict[(lam, inner_dim)] = float('inf')
-                for epoch in range(EPOCHS):
-                    optimizer.zero_grad()
-                    loss = model()
-                    with torch.no_grad():
-                        train_err, val_err = model.calc_train_val_err_ips(train_propensities, val_propensities)
-                        if val_err < val_err_dict[(lam, inner_dim)]:
-                            val_err_dict[(lam, inner_dim)] = val_err
-                        output_txt = f'iteration: {iteration} \t delta_type: {delta_type} \t fold: {fold_num + 1} \t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t val err: {val_err} \t lam: {lam} \t inner_dim: {inner_dim} '
-                        print(output_txt)
-                        f.write(f'{output_txt}\n')
-
-                    def closure():
-                        optimizer.zero_grad()
-                        loss = model()
-                        loss.backward()
-                        return loss
-
-                    optimizer.step(closure)
-
-    return val_err_dict
-
-def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam):
-    EPOCHS = 10
-    num_users, num_items = Y.shape
-    Y = torch.from_numpy(Y)
-    Y_test = torch.from_numpy(Y_test)
-    train_propensities = torch.from_numpy(inv_propensities)
-    inner_dim = best_dim
-    lam = best_lam
-    best_test_err = float('inf')
-    print()
-    print()
-    with open(f'test_error_{delta_type}.txt', 'a') as f:
-        model = MF(num_users, num_items, inner_dim, Y, Y_test, train_propensities, delta_type, lam)
-
-        optimizer = torch.optim.LBFGS(model.parameters())
-
-        for epoch in range(EPOCHS):
-            optimizer.zero_grad()
-            loss = model()
-
-            with torch.no_grad():
-                train_err, test_err = model.calc_train_test_err()
-                output_txt = f'iteration: {iteration} \t delta type: {delta_type}\t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t test err: {test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
-                print(output_txt)
-                f.write(f'{output_txt}\n')
-                if best_test_err > test_err:
-                    best_test_err = test_err
-
-            def closure():
-                optimizer.zero_grad()
-                loss = model()
-                loss.backward()
-                return loss
-
-            optimizer.step(closure)
-    with open(f'best_test_error_{delta_type}.txt', 'a') as f:
-        output_txt = f'iteration: {iteration} \t \ttest err: {best_test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
-        print(f'delta type: {delta_type}' + " " + output_txt)
-        f.write(f'{output_txt}\n')
-
-    return best_test_err
 
 
 if __name__ == '__main__':
     np.random.seed(seed)
     torch.manual_seed(seed)
     err_list = []
-    for i in range(30):
-        print(f'START OF ITERATION {i+1}')
-        test_err = read_data_and_split_to_folds(i+1, delta_type='MSE', path="data/yahoo_data", k=4)
+    for i in range(5):
+        print(f'START OF ITERATION {i + 1}')
+        test_err = read_data_and_split_to_folds(i + 1, delta_type='MSE', path="data/yahoo_data", k=4,
+                                                inter_coef=0.5, path_to_save_txt="dirichlet_try")
