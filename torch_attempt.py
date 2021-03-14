@@ -229,7 +229,7 @@ if __name__ == '__main__':
         # test_err_mse, test_err_mae = read_data_and_split_to_folds(i+1, path="data/yahoo_data", k=4)
         # mse_err_list.append(test_err_mse)
         # mae_err_list.append(test_err_mae)
-        test_err = read_data_and_split_to_folds(i+1, delta_type='MSE', path="data/yahoo_data", k=4)
+        test_err = read_data_and_split_to_folds(i+1, delta_type='MAE', path="data/yahoo_data", k=4)
 
 
     # Y, Y_test, inv_propensities = read_yahoo(path="data/yahoo_data")
