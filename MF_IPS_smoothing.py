@@ -141,4 +141,4 @@ if __name__ == '__main__':
                                                 inter_coef=inter_coef, path_to_save_txt=f"dirichlet_try_mu_{inter_coef}")
 
     print_results(path='dirichlet_try_test_error_MAE.txt')
-    print_results(path='MF-IPS mu=0.5/dirichlet_try_test_error_MSE.txt')
+    print_results(path='dirichlet_try_test_error_MSE.txt')
