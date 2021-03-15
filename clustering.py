@@ -4,20 +4,65 @@ from sklearn.cluster import KMeans
 import pandas as pd
 seed = 100
 
+def get_probs_per_cluster(num_clusters, num_of_items, clusters):
+    p_o_SUMS_clusters = {cluster: {} for cluster in range(num_clusters)}
+    p_o_item_clusters = {cluster: {} for cluster in range(num_clusters)}
 
-def get_inverse_propensities_clustering(df_train_propensities, df_train, train_matrix, clusters_num=5, return_p_y_r=False):
-    # train_matrix = np.expand_dims(train_matrix, axis=0)
+    p_y_r_o_clusters = {cluster: {} for cluster in range(num_clusters)}
+    p_o_clusters = {}
 
-    kmeans = KMeans(n_clusters=5, random_state=0).fit(train_matrix)
+    for cluster in range(num_clusters):
+        cluster_matrix = clusters[cluster]
+        p_o_clusters[cluster] = cluster_matrix[cluster_matrix != 0].size / cluster_matrix.size
+        for rating in range(1, 6):
+            p_y_r_o_clusters[cluster][rating] = cluster_matrix[cluster_matrix == rating].size / cluster_matrix[
+                cluster_matrix != 0].size
+        for item_index in range(num_of_items):
+            popularity = len(np.nonzero(cluster_matrix.T[item_index])[0])
+            p_o_SUMS_clusters[cluster][item_index] = popularity
+            p_o_item_clusters[cluster][item_index] = popularity / cluster_matrix.shape[0]
 
-    print(kmeans.labels_)
+    return p_o_SUMS_clusters, p_o_item_clusters, p_y_r_o_clusters, p_o_clusters
+
+def get_inverse_propensities_clustering(df_train_propensities, df_train, train_matrix, num_clusters=5, return_p_y_r=False):
+    num_of_users, num_of_items = train_matrix.shape
+
+    kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(train_matrix)
+
+    clusters_labels = kmeans.labels_
+    clusters = {}
+
+    for cluster in range(num_clusters):
+        clusters[cluster] = train_matrix[clusters_labels == cluster]
 
     p_y_r = dict(df_train_propensities['rating'].value_counts() / len(df_train_propensities))
     p_y_r_o = dict(df_train['rating'].value_counts() / len(df_train))
     p_o = len(df_train) / train_matrix.size
 
-    propensities = {r: p_y_r_o[r] * p_o * (1 / p_y_r[r]) for r in p_y_r.keys()}
-    propensities[0] = 0
+    p_o_item = dict(df_train['song_id'].value_counts() / num_of_users)
+    p_o_SUMS = dict(df_train['song_id'].value_counts())
+
+    p_o_SUMS_clusters, p_o_item_clusters, p_y_r_o_clusters, p_o_clusters = get_probs_per_cluster(num_clusters,
+                                                                                                 num_of_items,
+                                                                                                 clusters)
+    propensities = {}
+
+    propensities = {}
+
+    for cluster in range(num_clusters):
+        for item in range(num_of_items):
+            for r in range(1, 6):
+                paper_prob = p_y_r_o[r] * p_o * (1 / p_y_r[r])
+                item_only_prob = p_y_r_o[r] * p_o_item[item] * (1 / p_y_r[r])
+                cluster_only_prob = p_y_r_o_clusters[cluster][r] * p_o * (1 / p_y_r[r])
+                item_cluster_prob = p_y_r_o_clusters[cluster][r] * p_o_item_clusters[cluster][item] * (1 / p_y_r[r])
+                beta = 1
+                popularity_cluster_prob = (1-beta)*item_cluster_prob + beta*cluster_only_prob
+
+
+
+    # propensities = {r: p_y_r_o[r] * p_o * (1 / p_y_r[r]) for r in p_y_r.keys()}
+    # propensities[0] = 0
 
     p_f = lambda r: 1 / propensities[r] if propensities[r] != 0 else 0
     p_f_func = np.vectorize(p_f)

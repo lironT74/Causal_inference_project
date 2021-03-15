@@ -11,20 +11,25 @@ seed = 100
 
 def get_inverse_propensities_smoothing(df_train_propensities, df_train, train_matrix, inter_coef, return_p_y_r=False):
 
+    num_of_users, num_of_items = train_matrix.shape
+
     p_y_r = dict(df_train_propensities['rating'].value_counts() / len(df_train_propensities))
     p_y_r_o = dict(df_train['rating'].value_counts() / len(df_train))
-    p_o_item = dict(df_train['song_id'].value_counts() / 15400)
+    p_o_item = dict(df_train['song_id'].value_counts() / num_of_users)
     p_O_SUMS = dict(df_train['song_id'].value_counts())
     p_o = len(df_train) / train_matrix.size
 
+    alpha = {}
+    for item in p_o_item.keys():
+        alpha[item] = inter_coef/(p_O_SUMS[item]+inter_coef)
 
-    propensities = {(r, item): p_y_r_o[r]*(1-(inter_coef/(p_O_SUMS[item]+inter_coef))*p_o_item[item]+(inter_coef/(p_O_SUMS[item]+inter_coef))*p_o)*(1/p_y_r[r]) for r in p_y_r.keys() for item in p_o_item.keys()}
+    propensities = {(r, item): p_y_r_o[r]*((1-alpha[item])*p_o_item[item]+alpha[item]*p_o)*(1/p_y_r[r]) for r in p_y_r.keys() for item in p_o_item.keys()}
     for item in p_o_item.keys():
         propensities[(0, item)] = 0
     p_f = lambda r, item: 1/propensities[(r, item)] if propensities[(r,item)] != 0 else 0
-    propensities_matrix = np.zeros((15400, 1000))
-    for user in range(15400):
-        for item in range(1000):
+    propensities_matrix = np.zeros((num_of_users, num_of_items))
+    for user in range(num_of_users):
+        for item in range(num_of_items):
             r = train_matrix[user, item]
             propensities_matrix[user, item] = p_f(r, item+1)
 
