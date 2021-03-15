@@ -66,7 +66,6 @@ def read_data_and_split_to_folds(iteration, get_inverse_propensities, path_to_sa
 
 
 def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params'):
-    EPOCHS = 10
     num_users, num_items = Y_train.shape
     Y_train = torch.from_numpy(Y_train)
     Y_val = torch.from_numpy(Y_val)
@@ -151,19 +150,20 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 if __name__ == '__main__':
     k_folds = 4
 
-    for i in range(5):
-        for mu in [3, 30, 300, 3000, 30000]:
+    for i in range(2, 5):
+        for mu in [3, 300, 30000]:
             print(f'START OF ITERATION {i + 1}')
-            read_data_and_split_to_folds(iteration = i + 1,
+            print(f'MU: {mu}')
+            read_data_and_split_to_folds(iteration=i + 1,
                                          get_inverse_propensities=popularity_MF_IPS_propensities,
-                                         path_to_save_txt=f"popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}",
+                                         path_to_save_txt=f"popularity-MF-IPS mu={mu}/egor_dirichlet_try_mu_{mu}",
                                          delta_type=None,
                                          path="data/yahoo_data",
                                          k=k_folds,
                                          mu=mu)
 
-    for mu in [3, 30, 300, 3000, 30000]:
-        print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MAE_CV.txt')
-        print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MSE_CV.txt')
+    # for mu in [3, 30, 300, 3000, 30000]:
+    #     print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MAE_CV.txt')
+    #     print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MSE_CV.txt')
 
 

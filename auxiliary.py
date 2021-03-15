@@ -12,7 +12,7 @@ from sklearn.cluster import KMeans
 seed = 100
 inner_dims = [5]
 lams = [1e-4, 1e-3, 1e-2, 1e-1, 1]
-EPOCHS = 10
+EPOCHS = 7
 
 
 def df_to_dict(df, first_key, second_key, value_key):
