@@ -16,17 +16,19 @@ def get_inverse_propensities_smoothing(df_train_propensities, df_train, train_ma
     p_y_r = dict(df_train_propensities['rating'].value_counts() / len(df_train_propensities))
     p_y_r_o = dict(df_train['rating'].value_counts() / len(df_train))
     p_o_item = dict(df_train['song_id'].value_counts() / num_of_users)
-    p_O_SUMS = dict(df_train['song_id'].value_counts())
+    p_o_SUMS = dict(df_train['song_id'].value_counts())
     p_o = len(df_train) / train_matrix.size
 
     alpha = {}
     for item in p_o_item.keys():
-        alpha[item] = inter_coef/(p_O_SUMS[item]+inter_coef)
+        alpha[item] = inter_coef/(p_o_SUMS[item]+inter_coef)
 
     propensities = {(r, item): p_y_r_o[r]*((1-alpha[item])*p_o_item[item]+alpha[item]*p_o)*(1/p_y_r[r]) for r in p_y_r.keys() for item in p_o_item.keys()}
     for item in p_o_item.keys():
         propensities[(0, item)] = 0
+
     p_f = lambda r, item: 1/propensities[(r, item)] if propensities[(r,item)] != 0 else 0
+
     propensities_matrix = np.zeros((num_of_users, num_of_items))
     for user in range(num_of_users):
         for item in range(num_of_items):
@@ -130,8 +132,25 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
 
 
 if __name__ == '__main__':
-    np.random.seed(seed)
-    torch.manual_seed(seed)
+    # np.random.seed(seed)
+    # torch.manual_seed(seed)
+    # for i in range(5):
+    #     # Y, Y_test, inv_propensities = read_yahoo_smoothing(path="data/yahoo_data", is_cv=False, inter_coef=0.5)
+    #     column_names = ['user_id', 'song_id', 'rating']
+    #     path = "data/yahoo_data"
+    #     df_train = pd.read_csv(path + "/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
+    #     df_test_all = pd.read_csv(path + "/ydata-ymusic-rating-study-v1_0-test.txt", '\t', names=column_names)
+    #
+    #     msk = np.random.rand(len(df_test_all)) < 0.95
+    #     df_train_propensities = df_test_all[msk]
+    #     df_test = df_test_all[~msk]
+    #
+    #     Y, Y_test = get_numpy(df_train, df_test)
+    #     for mu in [10000, 300, 1, 0.5 ,0]:
+    #         inv_propensities = get_inverse_propensities_smoothing(df_train_propensities, df_train, Y,
+    #                                                                          inter_coef=mu)
+    #
+    #         train_model_test(Y, Y_test, inv_propensities, 1, 'MSE', 5, 1e-4, path_to_save_txt='checking_update', EPOCHS=5)
     err_list = []
     inter_coef = 5
 
