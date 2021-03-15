@@ -9,7 +9,7 @@ from auxiliary import *
 
 seed = 100
 
-def get_inverse_propensities_smoothing(df_train_propensities, df_train, train_matrix, inter_coef, return_p_y_r=False):
+def get_inverse_propensities_smoothing(df_train_propensities, df_train, train_matrix, mu, return_p_y_r=False):
 
     num_of_users, num_of_items = train_matrix.shape
 
@@ -21,7 +21,7 @@ def get_inverse_propensities_smoothing(df_train_propensities, df_train, train_ma
 
     alpha = {}
     for item in p_o_item.keys():
-        alpha[item] = inter_coef/(p_o_SUMS[item]+inter_coef)
+        alpha[item] = mu/(p_o_SUMS[item]+mu)
 
     propensities = {(r, item): p_y_r_o[r]*((1-alpha[item])*p_o_item[item]+alpha[item]*p_o)*(1/p_y_r[r]) for r in p_y_r.keys() for item in p_o_item.keys()}
     for item in p_o_item.keys():
@@ -40,7 +40,7 @@ def get_inverse_propensities_smoothing(df_train_propensities, df_train, train_ma
     return propensities_matrix
 
 
-def read_yahoo_smoothing(path="data/yahoo_data", is_cv = False, inter_coef=0.5):
+def read_yahoo_smoothing(path="data/yahoo_data", is_cv = False, mu=0.5):
     column_names = ['user_id', 'song_id', 'rating']
 
     df_train = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
@@ -52,7 +52,7 @@ def read_yahoo_smoothing(path="data/yahoo_data", is_cv = False, inter_coef=0.5):
 
     train_matrix, test_matrix = get_numpy(df_train, df_test)
 
-    inverse_propensities_matrix = get_inverse_propensities_smoothing(df_train_propensities, df_train, train_matrix, inter_coef)
+    inverse_propensities_matrix = get_inverse_propensities_smoothing(df_train_propensities, df_train, train_matrix, mu)
 
 
     if is_cv:
@@ -62,10 +62,10 @@ def read_yahoo_smoothing(path="data/yahoo_data", is_cv = False, inter_coef=0.5):
     return train_matrix, test_matrix, inverse_propensities_matrix
 
 
-def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_data", k=4, inter_coef=0.5, path_to_save_txt="dirichlet_try"):
+def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_data", k=4, mu=0.5, path_to_save_txt="dirichlet_try"):
 
 
-    df_train, df_test, df_train_propensities, Y, Y_test, inv_propensities = read_yahoo_smoothing(path, is_cv=True, inter_coef=inter_coef)
+    df_train, df_test, df_train_propensities, Y, Y_test, inv_propensities = read_yahoo_smoothing(path, is_cv=True, mu=mu)
 
     kf = KFold(n_splits=k, shuffle=True, random_state=seed)
     inner_dims = [5]
@@ -92,8 +92,8 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
             Y_val[row['user_id'] - 1, row['song_id'] - 1] = row['rating']
 
 
-        train_propensities = get_inverse_propensities_smoothing(df_train_propensities, fold_train_df, Y_train, inter_coef=inter_coef)
-        val_propensities = get_inverse_propensities_smoothing(df_train_propensities, fold_val_df, Y_val, inter_coef=inter_coef)
+        train_propensities = get_inverse_propensities_smoothing(df_train_propensities, fold_train_df, Y_train, mu=mu)
+        val_propensities = get_inverse_propensities_smoothing(df_train_propensities, fold_val_df, Y_val, mu=mu)
 
         train_propensities = train_propensities * (k / (k - 1))
         val_propensities = val_propensities * k
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     # np.random.seed(seed)
     # torch.manual_seed(seed)
     # for i in range(5):
-    #     # Y, Y_test, inv_propensities = read_yahoo_smoothing(path="data/yahoo_data", is_cv=False, inter_coef=0.5)
+    #     # Y, Y_test, inv_propensities = read_yahoo_smoothing(path="data/yahoo_data", is_cv=False, mu=0.5)
     #     column_names = ['user_id', 'song_id', 'rating']
     #     path = "data/yahoo_data"
     #     df_train = pd.read_csv(path + "/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
@@ -148,21 +148,28 @@ if __name__ == '__main__':
     #     Y, Y_test = get_numpy(df_train, df_test)
     #     for mu in [10000, 300, 1, 0.5 ,0]:
     #         inv_propensities = get_inverse_propensities_smoothing(df_train_propensities, df_train, Y,
-    #                                                                          inter_coef=mu)
+    #                                                                          mu=mu)
     #
     #         train_model_test(Y, Y_test, inv_propensities, 1, 'MSE', 5, 1e-4, path_to_save_txt='checking_update', EPOCHS=5)
-    err_list = []
-    inter_coef = 5
+
+
+    k_folds = 4
+
 
     for i in range(5):
-        print(f'START OF ITERATION {i + 1}')
-        test_err = read_data_and_split_to_folds(i + 1, delta_type='MAE', path="data/yahoo_data", k=4,
-                                                inter_coef=inter_coef, path_to_save_txt=f"MF-IPS mu={inter_coef}/dirichlet_try_mu_{inter_coef}")
 
-    for i in range(5):
-        print(f'START OF ITERATION {i + 1}')
-        test_err = read_data_and_split_to_folds(i + 1, delta_type='MSE', path="data/yahoo_data", k=4,
-                                                inter_coef=inter_coef, path_to_save_txt=f"MF-IPS mu={inter_coef}/dirichlet_try_mu_{inter_coef}")
+        for mu in [3, 30, 300, 3000, 30000]:
 
-    print_results(path=f'MF-IPS mu={inter_coef}/dirichlet_try_mu_5_MAE_CV.txt')
-    print_results(path=f'MF-IPS mu={inter_coef}/dirichlet_try_mu_5_MSE_CV.txt')
+            print(f'START OF ITERATION {i + 1} (MAE)')
+            read_data_and_split_to_folds(i + 1, delta_type='MAE', path="data/yahoo_data", k=k_folds,
+                                                    mu=mu, path_to_save_txt=f"MF-IPS mu={mu}/dirichlet_try_mu_{mu}")
+
+            print(f'START OF ITERATION {i + 1} (MSE)')
+            read_data_and_split_to_folds(i + 1, delta_type='MSE', path="data/yahoo_data", k=k_folds,
+                                                    mu=mu, path_to_save_txt=f"MF-IPS mu={mu}/dirichlet_try_mu_{mu}")
+
+
+    for mu in [3, 30, 300, 3000, 30000]:
+
+        print_results(path=f'MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MAE_CV.txt')
+        print_results(path=f'MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MSE_CV.txt')
