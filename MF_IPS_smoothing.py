@@ -133,12 +133,12 @@ if __name__ == '__main__':
     for i in range(5):
         print(f'START OF ITERATION {i + 1}')
         test_err = read_data_and_split_to_folds(i + 1, delta_type='MAE', path="data/yahoo_data", k=4,
-                                                inter_coef=inter_coef, path_to_save_txt=f"dirichlet_try_mu_{inter_coef}")
+                                                inter_coef=inter_coef, path_to_save_txt=f"MF-IPS mu={inter_coef}/dirichlet_try_mu_{inter_coef}")
 
     for i in range(5):
         print(f'START OF ITERATION {i + 1}')
         test_err = read_data_and_split_to_folds(i + 1, delta_type='MSE', path="data/yahoo_data", k=4,
-                                                inter_coef=inter_coef, path_to_save_txt=f"dirichlet_try_mu_{inter_coef}")
+                                                inter_coef=inter_coef, path_to_save_txt=f"MF-IPS mu={inter_coef}/dirichlet_try_mu_{inter_coef}")
 
-    print_results(path='dirichlet_try_test_error_MAE.txt')
-    print_results(path='dirichlet_try_test_error_MSE.txt')
+    print_results(path='MF-IPS mu={inter_coef}/dirichlet_try_mu_5_MAE_CV.txt')
+    print_results(path='MF-IPS mu={inter_coef}/dirichlet_try_mu_5_MSE_CV.txt')
