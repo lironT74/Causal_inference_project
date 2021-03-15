@@ -12,6 +12,8 @@ from sklearn.cluster import KMeans
 seed = 100
 inner_dims = [5]
 lams = [1e-4, 1e-3, 1e-2, 1e-1, 1]
+EPOCHS = 10
+
 
 def df_to_dict(df, first_key, second_key, value_key):
     new_dict = {}
@@ -148,7 +150,7 @@ def print_results(path = 'dirichlet_try_test_error_MAE.txt'):
                 best_err = float('inf')
             if (index + 1) % 50 == 0:
                 break
-        print(f'{path.split(".")[0][-3:]} test error: ', sum(err_lst) / len(err_lst))
+        print(f'{path.split("/")[0]} test error: ', sum(err_lst) / len(err_lst))
 
 if __name__ == '__main__':
     pass

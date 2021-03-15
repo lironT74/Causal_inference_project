@@ -3,7 +3,7 @@ from MF_torch import MF
 from propensities_estimation import MF_IPS_propensities, popularity_MF_IPS_propensities, cluster_popularity_MF_IPS_propensities
 
 
-def read_data_and_split_to_folds(iteration, get_inverse_propensities, delta_type=None, path="data/yahoo_data", k=4, *args, **kwargs):
+def read_data_and_split_to_folds(iteration, get_inverse_propensities, path_to_save_txt, delta_type=None, path="data/yahoo_data", k=4, *args, **kwargs):
 
     df_train, df_test, df_train_propensities, Y, Y_test, inv_propensities = read_yahoo(get_inverse_propensities, path, is_cv=True, **kwargs)
 
@@ -29,8 +29,8 @@ def read_data_and_split_to_folds(iteration, get_inverse_propensities, delta_type
             Y_val[row['user_id'] - 1, row['song_id'] - 1] = row['rating']
 
 
-        train_propensities = get_inverse_propensities(df_train_propensities, fold_train_df, Y_train)
-        val_propensities = get_inverse_propensities(df_train_propensities, fold_val_df, Y_val)
+        train_propensities = get_inverse_propensities(df_train_propensities, fold_train_df, Y_train, **kwargs)
+        val_propensities = get_inverse_propensities(df_train_propensities, fold_val_df, Y_val, **kwargs)
 
         train_propensities = train_propensities * (k / (k - 1))
         val_propensities = val_propensities * k
@@ -38,16 +38,16 @@ def read_data_and_split_to_folds(iteration, get_inverse_propensities, delta_type
         if delta_type is None:
 
             mse_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type="MSE")
+                                      delta_type="MSE", path_to_save_txt=path_to_save_txt)
             mae_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type="MAE")
+                                      delta_type="MAE", path_to_save_txt=path_to_save_txt)
 
             for key in mse_dict:
                 mse_dict_total[key] += mse_dict[key] / k
                 mae_dict_total[key] += mae_dict[key] / k
         else:
             curr_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type=delta_type)
+                                      delta_type=delta_type, path_to_save_txt=path_to_save_txt)
             for key in curr_dict:
                 mse_dict_total[key] += curr_dict[key] / k
 
@@ -65,11 +65,9 @@ def read_data_and_split_to_folds(iteration, get_inverse_propensities, delta_type
         return train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, dim_mse, lam_mse)
 
 
-def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params_'):
+def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params'):
     EPOCHS = 10
     num_users, num_items = Y_train.shape
-    inner_dims = [5]
-    lams = [1e-4, 1e-3, 1e-2, 1e-1, 1]
     Y_train = torch.from_numpy(Y_train)
     Y_val = torch.from_numpy(Y_val)
     train_propensities = torch.from_numpy(train_propensities)
@@ -106,8 +104,7 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
     return val_err_dict
 
 
-
-def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam, path_to_save_txt='test_error', EPOCHS = 10):
+def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam, path_to_save_txt='test_error'):
     num_users, num_items = Y.shape
     Y = torch.from_numpy(Y)
     Y_test = torch.from_numpy(Y_test)
@@ -156,14 +153,16 @@ if __name__ == '__main__':
 
 
     for i in range(5):
-
         for mu in [3, 30, 300, 3000, 30000]:
             print(f'START OF ITERATION {i + 1}')
-            read_data_and_split_to_folds(i + 1,
+            read_data_and_split_to_folds(iteration = i + 1,
                                          get_inverse_propensities=popularity_MF_IPS_propensities,
-                                         delta_type=None, path="data/yahoo_data", k=k_folds,
-                                         mu=mu, path_to_save_txt=f"MF-IPS mu={mu}/dirichlet_try_mu_{mu}")
+                                         path_to_save_txt=f"popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}",
+                                         delta_type=None,
+                                         path="data/yahoo_data",
+                                         k=k_folds,
+                                         mu=mu)
 
     for mu in [3, 30, 300, 3000, 30000]:
-        print_results(path=f'MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MAE_CV.txt')
-        print_results(path=f'MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MSE_CV.txt')
+        print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MAE_CV.txt')
+        print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MSE_CV.txt')
