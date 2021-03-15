@@ -1,5 +1,5 @@
 import numpy as np
-from reg_numpy_attempt import get_numpy
+from MF_IPS_numpy_failed import get_numpy
 from sklearn.cluster import KMeans
 import pandas as pd
 seed = 100
@@ -27,6 +27,7 @@ def get_inverse_propensities_clustering(df_train_propensities, df_train, train_m
         return propensities_matrix, p_y_r
     return propensities_matrix
 
+
 def read_yahoo_clustering(path="data/yahoo_data", is_cv = False):
     column_names = ['user_id', 'song_id', 'rating']
 
@@ -47,6 +48,7 @@ def read_yahoo_clustering(path="data/yahoo_data", is_cv = False):
 
 
     return train_matrix, test_matrix, inverse_propensities_matrix
+
 
 # def cluster_users(path="data/yahoo_data"):
 #     train_matrix, test_matrix, inverse_propensities_matrix = read_yahoo(path)

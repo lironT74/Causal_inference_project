@@ -1,5 +1,4 @@
 import numpy as np
-import scipy
 import pandas as pd
 import tqdm
 from scipy.optimize import minimize
@@ -185,16 +184,6 @@ if __name__ == '__main__':
     shape = Y.shape
 
     type_loss = 'MSE'
-
-    # lambdas = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
-    # lambdas.reverse()
-    # inner_dims = [40, 20, 10, 5]
-    # for lam in lambdas:
-    #     for inner_dim in inner_dims:
-    #         vec = get_problem_parameters(inner_dim, shape)
-    #         x = minimize(get_objective, x0=vec, jac=get_gradient, method='L-BFGS-B', options={'maxiter': 20},
-    #                      args=(inverse_propensities_matrix, Y, Y_test, inner_dim, shape, lam, type_loss))
-
 
     vec = get_problem_parameters(20, shape)
     x = minimize(get_objective, x0=vec, jac=get_gradient, method='L-BFGS-B', options={'maxiter': 20},

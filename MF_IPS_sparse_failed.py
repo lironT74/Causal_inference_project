@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize, fmin_l_bfgs_b
 from numpy.linalg import norm
-from LoadData import load_yahoo
+from auxiliary import load_yahoo
 from collections import Counter
 from scipy.sparse import dok_matrix
 

@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 import numpy as np
-from reg_numpy_attempt import read_yahoo, get_inverse_propensities
+from MF_IPS_numpy_failed import read_yahoo, get_inverse_propensities
 from sklearn.model_selection import KFold
 
 seed = 100
@@ -137,6 +137,7 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
 def find_best_key_dict(dict_total):
     return min(dict_total, key=dict_total.get)
 
+
 def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params_'):
     EPOCHS = 10
     num_users, num_items = Y_train.shape
@@ -177,6 +178,8 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
 
     return val_err_dict
 
+
+
 def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam, path_to_save_txt='test_error', EPOCHS = 10):
     num_users, num_items = Y.shape
     Y = torch.from_numpy(Y)
@@ -211,6 +214,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
                 return loss
 
             optimizer.step(closure)
+
     with open(f'best_test_error_{delta_type}.txt', 'a') as f:
         output_txt = f'iteration: {iteration} \t \ttest err: {best_test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
         print(f'delta type: {delta_type}' + " " + output_txt)

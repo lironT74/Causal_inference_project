@@ -80,22 +80,23 @@ def load_yahoo(path="data/yahoo_data"):
     # return user2song_train, user2song_test, Y_train, Y_test
     return user2song_train, user2song_train_test, user2song_test_test, Y_train, Y_train_test, Y_test_test
 
+
+def print_results(path = 'dirichlet_try_test_error_MAE.txt'):
+    with open(path, 'r')as file:
+        err_lst = []
+        best_err = float('inf')
+        for index, line in enumerate(file):
+            splitted_line = line.split()
+            test_err = float(splitted_line[14])
+            if test_err < best_err:
+                best_err = test_err
+            if (index + 1) % 10 == 0:
+                err_lst.append(best_err)
+                best_err = float('inf')
+            if (index + 1) % 50 == 0:
+                break
+        print(f'{path.split(".")[0][-3:]} test error: ', sum(err_lst) / len(err_lst))
+
+
 if __name__ == '__main__':
     read_yahoo()
-    # user2song_train, user2song_train_test, user2song_test_test, Y_train, Y_train_test, Y_test_test = load_yahoo()
-    #
-    # Y_train = Y_train.toarray()
-    # Y_train = np.ma.array(Y_train, mask=Y_train <= 0, hard_mask=True, copy=False)
-    #
-    # Y_train_test = Y_train_test.toarray()
-    # Y_train_test = np.ma.array(Y_train_test, mask=Y_train_test <= 0, hard_mask=True, copy=False)
-    #
-    # prob_obs = Y_train.count() / Y_train.size     # P(O=1)
-    # p_y_o_list = {}
-    # p_y_r = {}
-    #
-    # for r in range(1, 6):
-    #     p_y_r_given_obs = Y_train[Y_train == r].count() / Y_train.count()    # P(Y=r|O=1)
-    #     p_y_o_list[r] = p_y_r_given_obs
-    #     p_y_r[r] = Y_train_test[Y_train_test == r].count() / Y_train_test.count()
-    #
