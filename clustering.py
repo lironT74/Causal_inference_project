@@ -56,7 +56,9 @@ def get_inverse_propensities_clustering(df_train_propensities, df_train, train_m
                 item_only_prob = p_y_r_o[r] * p_o_item[item] * (1 / p_y_r[r])
                 cluster_only_prob = p_y_r_o_clusters[cluster][r] * p_o * (1 / p_y_r[r])
                 item_cluster_prob = p_y_r_o_clusters[cluster][r] * p_o_item_clusters[cluster][item] * (1 / p_y_r[r])
+
                 beta = 1
+
                 popularity_cluster_prob = (1-beta)*item_cluster_prob + beta*cluster_only_prob
 
 

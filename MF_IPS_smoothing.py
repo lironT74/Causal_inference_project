@@ -24,20 +24,21 @@ def get_inverse_propensities_smoothing(df_train_propensities, df_train, train_ma
         alpha[item] = mu/(p_o_SUMS[item]+mu)
 
     propensities = {(r, item): p_y_r_o[r]*((1-alpha[item])*p_o_item[item]+alpha[item]*p_o)*(1/p_y_r[r]) for r in p_y_r.keys() for item in p_o_item.keys()}
+
     for item in p_o_item.keys():
         propensities[(0, item)] = 0
 
     p_f = lambda r, item: 1/propensities[(r, item)] if propensities[(r,item)] != 0 else 0
 
-    propensities_matrix = np.zeros((num_of_users, num_of_items))
+    inverse_propensities_matrix = np.zeros((num_of_users, num_of_items))
     for user in range(num_of_users):
         for item in range(num_of_items):
             r = train_matrix[user, item]
-            propensities_matrix[user, item] = p_f(r, item+1)
+            inverse_propensities_matrix[user, item] = p_f(r, item+1)
 
     if return_p_y_r:
-        return propensities_matrix, p_y_r
-    return propensities_matrix
+        return inverse_propensities_matrix, p_y_r
+    return inverse_propensities_matrix
 
 
 def read_yahoo_smoothing(path="data/yahoo_data", is_cv = False, mu=0.5):
@@ -170,6 +171,5 @@ if __name__ == '__main__':
 
 
     for mu in [3, 30, 300, 3000, 30000]:
-
         print_results(path=f'MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MAE_CV.txt')
         print_results(path=f'MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MSE_CV.txt')
