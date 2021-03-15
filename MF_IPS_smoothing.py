@@ -140,5 +140,5 @@ if __name__ == '__main__':
         test_err = read_data_and_split_to_folds(i + 1, delta_type='MSE', path="data/yahoo_data", k=4,
                                                 inter_coef=inter_coef, path_to_save_txt=f"MF-IPS mu={inter_coef}/dirichlet_try_mu_{inter_coef}")
 
-    print_results(path='MF-IPS mu={inter_coef}/dirichlet_try_mu_5_MAE_CV.txt')
-    print_results(path='MF-IPS mu={inter_coef}/dirichlet_try_mu_5_MSE_CV.txt')
+    print_results(path=f'MF-IPS mu={inter_coef}/dirichlet_try_mu_5_MAE_CV.txt')
+    print_results(path=f'MF-IPS mu={inter_coef}/dirichlet_try_mu_5_MSE_CV.txt')
