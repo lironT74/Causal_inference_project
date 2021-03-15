@@ -151,7 +151,6 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 if __name__ == '__main__':
     k_folds = 4
 
-
     for i in range(5):
         for mu in [3, 30, 300, 3000, 30000]:
             print(f'START OF ITERATION {i + 1}')
@@ -166,3 +165,5 @@ if __name__ == '__main__':
     for mu in [3, 30, 300, 3000, 30000]:
         print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MAE_CV.txt')
         print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MSE_CV.txt')
+
+
