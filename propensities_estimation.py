@@ -108,21 +108,6 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
 
     #Clusters estimators:
 
-    #MCAR
-    p_y_r_clusters = {cluster: [] for cluster in range(num_clusters)}
-    for index, row in df_train_propensities.iterrows():
-        user_cluster = clusters_labels[row['user_id'] - 1]
-        p_y_r_clusters[user_cluster].append(row['rating'])
-
-    for cluster in range(num_clusters):
-        ratings = p_y_r_clusters[cluster]
-
-        p_y_r_cluster = {}
-        for rating in range(1, 6):
-            p_y_r_cluster[rating] = ratings.count(rating)/len(ratings)
-
-        p_y_r_clusters[cluster] = p_y_r_cluster
-
 
     #MNAR
     clusters_matrices = {}
@@ -138,7 +123,7 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
     # p_o_popularity = dict(df_train['song_id'].value_counts() / num_of_users)
     # p_o_SUMS = dict(df_train['song_id'].value_counts())
     # p_o_all_ = len(df_train) / train_matrix.size
-    # p_y_r = dict(df_train_propensities['rating'].value_counts() / len(df_train_propensities))
+    p_y_r = dict(df_train_propensities['rating'].value_counts() / len(df_train_propensities))
     # alpha = {}
     # for item_index in range(num_of_items):
     #     alpha[item_index] = mu/(p_o_SUMS[item_index] + mu)
@@ -174,9 +159,8 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
                     p_o_cluster = p_o_cluster_
 
                 p_y_r_o_cluster = p_y_r_o_clusters[cluster][rating]
-                p_y_r_cluster = p_y_r_clusters[cluster][rating]
 
-                cluster_propensities = (p_y_r_o_cluster * p_o_cluster) * (1 / p_y_r_cluster)
+                cluster_propensities = (p_y_r_o_cluster * p_o_cluster) * (1 / p_y_r[rating])
 
                 inv_propensities[(rating, item_index, cluster)] = 1 / cluster_propensities
 
@@ -192,10 +176,8 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
             label = clusters_labels[user]
             inverse_propensities_matrix[user, item_index] = inv_propensities[(rating, item_index + 1, label)]
 
-
-
     if return_p_y_r:
-        return inverse_propensities_matrix, p_y_r_clusters
+        return inverse_propensities_matrix, p_y_r
     return inverse_propensities_matrix
 
 
