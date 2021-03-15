@@ -70,8 +70,8 @@ class MF(nn.Module):
         return (train_propensities*diff_train).mean(), (val_propensities*diff_test).mean()
 
 
-def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_data", k=4):
-    df_train, df_test, df_train_propensities, Y, Y_test, inv_propensities = read_yahoo(path, is_cv=True)
+def read_data_and_split_to_folds(iteration, get_inverse_propensities=get_inverse_propensities, delta_type=None, path="data/yahoo_data", k=4):
+    df_train, df_test, df_train_propensities, Y, Y_test, inv_propensities = read_yahoo(get_inverse_propensities, path, is_cv=True)
 
     kf = KFold(n_splits=k, shuffle=True, random_state=seed)
     inner_dims = [5]
@@ -80,8 +80,7 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
     mse_dict_total = {(lam, inner_dim): 0 for lam in lams for inner_dim in inner_dims}
     mae_dict_total = {(lam, inner_dim): 0 for lam in lams for inner_dim in inner_dims}
 
-    num_users = 15400
-    num_songs = 1000
+    num_users, num_songs = Y.shape
 
     for fold_num, (train_index, val_index) in enumerate(kf.split(df_train)):
 
@@ -128,10 +127,10 @@ def read_data_and_split_to_folds(iteration, delta_type=None, path="data/yahoo_da
     if delta_type is None:
         best_test_err_mse = train_model_test(Y, Y_test, inv_propensities, iteration, "MSE", dim_mse, lam_mse)
         best_test_err_mae = train_model_test(Y, Y_test, inv_propensities, iteration, "MAE", dim_mae, lam_mae)
+
+        return best_test_err_mse, best_test_err_mae
     else:
         return train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, dim_mse, lam_mse)
-
-    return best_test_err_mse, best_test_err_mae
 
 
 def find_best_key_dict(dict_total):

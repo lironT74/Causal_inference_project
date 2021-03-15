@@ -39,7 +39,7 @@ def get_inverse_propensities(df_train_propensities, df_train, train_matrix, retu
     return propensities_matrix
 
 
-def read_yahoo(path="data/yahoo_data", is_cv = False):
+def read_yahoo(get_inverse_propensities=get_inverse_propensities, path="data/yahoo_data", is_cv = False):
     column_names = ['user_id', 'song_id', 'rating']
 
     df_train = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
