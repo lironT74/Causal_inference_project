@@ -67,9 +67,15 @@ def read_data_and_split_to_folds(iteration, get_inverse_propensities, path_to_sa
 
 
 def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params', *args, **kwargs):
-    mu = kwargs.get("mu", -1)
-    if mu == -1:
+
+    use_popularity = kwargs.get("use_popularity", None)
+    if use_popularity is None:
         raise ValueError
+
+    mu = kwargs.get("mu", -1)
+    if mu == -1 and use_popularity:
+        raise ValueError
+
 
     num_users, num_items = Y_train.shape
     Y_train = torch.from_numpy(Y_train)
@@ -164,7 +170,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
 if __name__ == '__main__':
     k_folds = 4
-    delta_type = 'MSE'
+    delta_type = 'MAE'
     cluster_sizes = [3, 5, 10]
     for i in range(5):
         for size in cluster_sizes:
