@@ -175,7 +175,7 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
         for item_index in range(num_of_items):
             rating = train_matrix[user, item_index]
             label = clusters_labels[user]
-            inverse_propensities_matrix[user, item_index] = inv_propensities[(rating, item_index + 1, label)]
+            inverse_propensities_matrix[user, item_index] = inv_propensities[(rating, item_index, label)]
 
     if return_p_y_r:
         return inverse_propensities_matrix, p_y_r
