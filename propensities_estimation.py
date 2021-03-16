@@ -133,9 +133,10 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
 
     for cluster in range(num_clusters):
 
-        beta = {}
-        for item_index in range(num_of_items):
-            beta[item_index] = mu / (p_o_SUMS_clusters[cluster][item_index] + mu)
+        if use_popularity:
+            beta = {}
+            for item_index in range(num_of_items):
+                beta[item_index] = mu / (p_o_SUMS_clusters[cluster][item_index] + mu)
 
         for item_index in range(num_of_items):
 
@@ -151,7 +152,7 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
 
 
                 p_o_popularity_cluster_ = p_o_popularity_clusters[cluster][item_index]
-                p_o_cluster_ = p_o_clusters[cluster][item_index]
+                p_o_cluster_ = p_o_clusters[cluster]
 
                 if use_popularity:
                     p_o_cluster = (1-beta[item_index])*p_o_popularity_cluster_ + beta[item_index]*p_o_cluster_

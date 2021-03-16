@@ -164,28 +164,29 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
 if __name__ == '__main__':
     k_folds = 4
-    mus = [3, 300, 30000]
     delta_type = 'MAE'
-    # for i in range(5):
-    #     for mu in mus:
-    #         print(f'START OF ITERATION {i + 1}')
-    #         print(f'mu: {mu}, delta: {delta_type}')
-    #
-    #         dir = f'popularity-MF-IPS/mu={mu}/'
-    #
-    #         os.makedirs(dir, exist_ok=True)
-    #         read_data_and_split_to_folds(iteration=i + 1,
-    #                                      get_inverse_propensities=popularity_MF_IPS_propensities,
-    #                                      path_to_save_txt=f"{dir}exp",
-    #                                      delta_type=delta_type,
-    #                                      path="data/yahoo_data",
-    #                                      k=k_folds,
-    #                                      mu=mu,
-    #                                      use_popularity=True)
+    cluster_sizes = [3, 5, 10]
+    for i in range(5):
+        for size in cluster_sizes:
+            print(f'START OF ITERATION {i + 1}')
+            print(f'size: {size}, delta: {delta_type}')
 
-    for mu in mus:
-        print(f'Mu: {mu}')
-        dir = f'popularity-MF-IPS/mu={mu}/'
+            dir = f'cluster-MF-IPS/size={size}/'
+
+            os.makedirs(dir, exist_ok=True)
+            read_data_and_split_to_folds(iteration=i + 1,
+                                         get_inverse_propensities=cluster_popularity_MF_IPS_propensities,
+                                         path_to_save_txt=f"{dir}exp",
+                                         delta_type=delta_type,
+                                         path="data/yahoo_data",
+                                         k=k_folds,
+                                         use_popularity=False,
+                                         num_clusters=size,
+                                         mu=-1)
+
+    for size in cluster_sizes:
+        print(f'Size: {size}')
+        dir = f'cluster-MF-IPS/size={size}/'
         print_results(path=f'{dir}exp_{delta_type}_best.txt', at_index=6, epochs=7)
 
 
