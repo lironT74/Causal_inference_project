@@ -76,9 +76,9 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
     if mu == -1 and use_popularity:
         raise ValueError
 
-    cluster_size = kwargs.get('cluster_size', -1)
-    if cluster_size == -1:
-        raise  ValueError
+    num_clusters = kwargs.get('num_clusters', -1)
+    if num_clusters == -1:
+        raise ValueError
 
 
     num_users, num_items = Y_train.shape
@@ -178,14 +178,14 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
 if __name__ == '__main__':
     k_folds = 4
-    delta_type = 'MAE'
-    cluster_sizes = [3, 5, 10]
+    delta_type = 'MSE'
+    num_clusterssss = [3, 5, 10]
     for i in range(5):
-        for cluster_size in cluster_sizes:
+        for num_clusters in num_clusterssss:
             print(f'START OF ITERATION {i + 1}')
-            print(f'size: {cluster_size}, delta: {delta_type}')
+            print(f'num_clusters: {num_clusters}, delta: {delta_type}')
 
-            dir = f'cluster-MF-IPS/k={cluster_size}/'
+            dir = f'cluster-MF-IPS/num_clusters={num_clusters}/'
 
             os.makedirs(dir, exist_ok=True)
             read_data_and_split_to_folds(iteration=i + 1,
@@ -195,12 +195,12 @@ if __name__ == '__main__':
                                          path="data/yahoo_data",
                                          k=k_folds,
                                          use_popularity=False,
-                                         num_clusters=cluster_size,
+                                         num_clusters=num_clusters,
                                          mu=5)
 
-    for cluster_size in cluster_sizes:
-        print(f'Size: {cluster_size}')
-        dir = f'cluster-MF-IPS/k={cluster_size}/'
+    for num_clusters in num_clusterssss:
+        print(f'num_clusters: {num_clusters}')
+        dir = f'cluster-MF-IPS/num_clusters={num_clusters}/'
         print_results(path=f'{dir}exp_{delta_type}_best.txt', at_index=6, epochs=7)
 
 
