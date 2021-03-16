@@ -180,7 +180,8 @@ if __name__ == '__main__':
                                          delta_type=delta_type,
                                          path="data/yahoo_data",
                                          k=k_folds,
-                                         mu=mu)
+                                         mu=mu,
+                                         use_popularity=True)
 
     for mu in mus:
         dir = f'popularity-MF-IPS/mu={mu}/'
