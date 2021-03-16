@@ -57,8 +57,6 @@ def popularity_MF_IPS_propensities(df_train_propensities, df_train, train_matrix
     return inverse_propensities_matrix
 
 
-
-
 def get_MNAR_probs_per_cluster(num_clusters, num_of_items, clusters_matrices):
     p_o_SUMS_clusters = {cluster: {} for cluster in range(num_clusters)}
     p_o_popularity_clusters = {cluster: {} for cluster in range(num_clusters)}
@@ -107,7 +105,6 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
     clusters_labels = kmeans.labels_
 
     #Clusters estimators:
-
 
     #MNAR
     clusters_matrices = {}
