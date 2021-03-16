@@ -76,6 +76,10 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
     if mu == -1 and use_popularity:
         raise ValueError
 
+    cluster_size = kwargs.get('cluster_size', -1)
+    if cluster_size == -1:
+        raise  ValueError
+
 
     num_users, num_items = Y_train.shape
     Y_train = torch.from_numpy(Y_train)
@@ -125,6 +129,10 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
     if mu == -1 and use_popularity:
         raise ValueError
 
+    cluster_size = kwargs.get('cluster_size', -1)
+    if cluster_size == -1:
+        raise ValueError
+
     num_users, num_items = Y.shape
     Y = torch.from_numpy(Y)
     Y_test = torch.from_numpy(Y_test)
@@ -145,7 +153,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
             with torch.no_grad():
                 train_err, test_err = model.calc_train_test_err()
-                output_txt = f'iteration: {iteration} \t mu: {mu} \t delta type: {delta_type}\t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t test err: {test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
+                output_txt = f'iteration: {iteration} \t k: {cluster_size} \t delta type: {delta_type}\t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t test err: {test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
                 print(output_txt)
                 f.write(f'{output_txt}\n')
                 if best_test_err > test_err:
@@ -160,7 +168,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
             optimizer.step(closure)
 
     with open(f'{path_to_save_txt}_{delta_type}_best.txt', 'a') as f:
-        output_txt = f'iteration: {iteration}\t mu: {mu} \ttest err: {best_test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
+        output_txt = f'iteration: {iteration}\t k: {cluster_size} \ttest err: {best_test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
         print(f'delta type: {delta_type}' + " " + output_txt)
         f.write(f'{output_txt}\n')
 
@@ -173,11 +181,11 @@ if __name__ == '__main__':
     delta_type = 'MAE'
     cluster_sizes = [3, 5, 10]
     for i in range(5):
-        for size in cluster_sizes:
+        for cluster_size in cluster_sizes:
             print(f'START OF ITERATION {i + 1}')
-            print(f'size: {size}, delta: {delta_type}')
+            print(f'size: {cluster_size}, delta: {delta_type}')
 
-            dir = f'cluster-MF-IPS/k={size}/'
+            dir = f'cluster-MF-IPS/k={cluster_size}/'
 
             os.makedirs(dir, exist_ok=True)
             read_data_and_split_to_folds(iteration=i + 1,
@@ -187,12 +195,12 @@ if __name__ == '__main__':
                                          path="data/yahoo_data",
                                          k=k_folds,
                                          use_popularity=False,
-                                         num_clusters=size,
-                                         mu=-1)
+                                         num_clusters=cluster_size,
+                                         mu=5)
 
-    for size in cluster_sizes:
-        print(f'Size: {size}')
-        dir = f'cluster-MF-IPS/k={size}/'
+    for cluster_size in cluster_sizes:
+        print(f'Size: {cluster_size}')
+        dir = f'cluster-MF-IPS/k={cluster_size}/'
         print_results(path=f'{dir}exp_{delta_type}_best.txt', at_index=6, epochs=7)
 
 
