@@ -138,20 +138,21 @@ def read_yahoo(get_inverse_propensities, path="data/yahoo_data", is_cv=False, *a
     return train_matrix, test_matrix, inverse_propensities_matrix
 
 
-def print_results(path = 'dirichlet_try_test_error_MAE.txt'):
+def print_results(path = 'dirichlet_try_test_error_MAE.txt', at_index=14, epochs=10):
     with open(path, 'r')as file:
         err_lst = []
         best_err = float('inf')
         for index, line in enumerate(file):
             splitted_line = line.split()
-            test_err = float(splitted_line[14])
+            test_err = float(splitted_line[at_index])
+            err_lst.append(test_err)
             if test_err < best_err:
                 best_err = test_err
-            if (index + 1) % 10 == 0:
-                err_lst.append(best_err)
-                best_err = float('inf')
-            if (index + 1) % 50 == 0:
-                break
+            # if (index + 1) % 10 == 0:
+            #     err_lst.append(best_err)
+            #     best_err = float('inf')
+            # if (index + 1) % 50 == 0:
+            #     break
         print(f'{path.split("/")[0]} test error: ', sum(err_lst) / len(err_lst))
 
 if __name__ == '__main__':

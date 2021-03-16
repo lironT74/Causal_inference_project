@@ -165,26 +165,27 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 if __name__ == '__main__':
     k_folds = 4
     mus = [3, 300, 30000]
-    delta_type = 'MSE'
-    for i in range(5):
-        for mu in mus:
-            print(f'START OF ITERATION {i + 1}')
-            print(f'mu: {mu}, delta: {delta_type}')
-
-            dir = f'popularity-MF-IPS/mu={mu}/'
-
-            os.makedirs(dir, exist_ok=True)
-            read_data_and_split_to_folds(iteration=i + 1,
-                                         get_inverse_propensities=popularity_MF_IPS_propensities,
-                                         path_to_save_txt=f"{dir}exp",
-                                         delta_type=delta_type,
-                                         path="data/yahoo_data",
-                                         k=k_folds,
-                                         mu=mu,
-                                         use_popularity=True)
+    delta_type = 'MAE'
+    # for i in range(5):
+    #     for mu in mus:
+    #         print(f'START OF ITERATION {i + 1}')
+    #         print(f'mu: {mu}, delta: {delta_type}')
+    #
+    #         dir = f'popularity-MF-IPS/mu={mu}/'
+    #
+    #         os.makedirs(dir, exist_ok=True)
+    #         read_data_and_split_to_folds(iteration=i + 1,
+    #                                      get_inverse_propensities=popularity_MF_IPS_propensities,
+    #                                      path_to_save_txt=f"{dir}exp",
+    #                                      delta_type=delta_type,
+    #                                      path="data/yahoo_data",
+    #                                      k=k_folds,
+    #                                      mu=mu,
+    #                                      use_popularity=True)
 
     for mu in mus:
+        print(f'Mu: {mu}')
         dir = f'popularity-MF-IPS/mu={mu}/'
-        print_results(path=f'{dir}exp_{delta_type}_CV.txt')
+        print_results(path=f'{dir}exp_{delta_type}_best.txt', at_index=6, epochs=7)
 
 
