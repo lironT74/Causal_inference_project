@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import pickle
 import numpy as np
@@ -114,11 +115,12 @@ def find_best_key_dict(dict_total):
     return min(dict_total, key=dict_total.get)
 
 
-def read_yahoo(get_inverse_propensities, path="data/yahoo_data", is_cv = False, *args, **kwargs):
+def read_yahoo(get_inverse_propensities, path="data/yahoo_data", is_cv=False, *args, **kwargs):
     column_names = ['user_id', 'song_id', 'rating']
 
     df_train = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-train.txt", '\t', names=column_names)
     df_test_all = pd.read_csv(path+"/ydata-ymusic-rating-study-v1_0-test.txt", '\t', names=column_names)
+
 
     msk = np.random.rand(len(df_test_all)) < 0.95
     df_train_propensities = df_test_all[msk]

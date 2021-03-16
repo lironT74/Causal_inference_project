@@ -87,9 +87,6 @@ def get_MNAR_probs_per_cluster(num_clusters, num_of_items, clusters_matrices):
 
 def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, train_matrix, return_p_y_r=False,  *args, **kwargs):
 
-    mu = kwargs.get("mu", -1)
-    if mu == -1:
-        raise ValueError
 
     num_clusters = kwargs.get("num_clusters", -1)
     if num_clusters == -1:
@@ -99,6 +96,9 @@ def cluster_popularity_MF_IPS_propensities(df_train_propensities, df_train, trai
     if use_popularity is None:
         raise ValueError
 
+    mu = kwargs.get("mu", -1)
+    if mu == -1 and use_popularity:
+        raise ValueError
 
     num_of_users, num_of_items = train_matrix.shape
 

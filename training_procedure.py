@@ -38,34 +38,39 @@ def read_data_and_split_to_folds(iteration, get_inverse_propensities, path_to_sa
         if delta_type is None:
 
             mse_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type="MSE", path_to_save_txt=path_to_save_txt)
+                                      delta_type="MSE", path_to_save_txt=path_to_save_txt, **kwargs)
             mae_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type="MAE", path_to_save_txt=path_to_save_txt)
+                                      delta_type="MAE", path_to_save_txt=path_to_save_txt, **kwargs)
 
             for key in mse_dict:
                 mse_dict_total[key] += mse_dict[key] / k
                 mae_dict_total[key] += mae_dict[key] / k
         else:
             curr_dict = train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration,
-                                      delta_type=delta_type, path_to_save_txt=path_to_save_txt)
+                                      delta_type=delta_type, path_to_save_txt=path_to_save_txt, **kwargs)
             for key in curr_dict:
                 mse_dict_total[key] += curr_dict[key] / k
-
-
 
     lam_mse, dim_mse = find_best_key_dict(mse_dict_total)
     lam_mae, dim_mae = find_best_key_dict(mae_dict_total)
 
     if delta_type is None:
-        best_test_err_mse = train_model_test(Y, Y_test, inv_propensities, iteration, "MSE", dim_mse, lam_mse)
-        best_test_err_mae = train_model_test(Y, Y_test, inv_propensities, iteration, "MAE", dim_mae, lam_mae)
+        best_test_err_mse = train_model_test(Y, Y_test, inv_propensities, iteration, "MSE", dim_mse, lam_mse,
+                                             path_to_save_txt=path_to_save_txt, **kwargs)
+        best_test_err_mae = train_model_test(Y, Y_test, inv_propensities, iteration, "MAE", dim_mae, lam_mae,
+                                             path_to_save_txt=path_to_save_txt, **kwargs)
 
         return best_test_err_mse, best_test_err_mae
     else:
-        return train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, dim_mse, lam_mse)
+        return train_model_test(Y, Y_test, inv_propensities, iteration,
+                                delta_type, dim_mse, lam_mse, path_to_save_txt=path_to_save_txt, **kwargs)
 
 
-def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params'):
+def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params', *args, **kwargs):
+    mu = kwargs.get("mu", -1)
+    if mu == -1:
+        raise ValueError
+
     num_users, num_items = Y_train.shape
     Y_train = torch.from_numpy(Y_train)
     Y_val = torch.from_numpy(Y_val)
@@ -103,7 +108,17 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
     return val_err_dict
 
 
-def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam, path_to_save_txt='test_error'):
+def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam, path_to_save_txt='test_error', *args, **kwargs):
+
+
+    use_popularity = kwargs.get("use_popularity", None)
+    if use_popularity is None:
+        raise ValueError
+
+    mu = kwargs.get("mu", -1)
+    if mu == -1 and use_popularity:
+        raise ValueError
+
     num_users, num_items = Y.shape
     Y = torch.from_numpy(Y)
     Y_test = torch.from_numpy(Y_test)
@@ -124,7 +139,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
             with torch.no_grad():
                 train_err, test_err = model.calc_train_test_err()
-                output_txt = f'iteration: {iteration} \t delta type: {delta_type}\t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t test err: {test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
+                output_txt = f'iteration: {iteration} \t mu: {mu} \t delta type: {delta_type}\t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t test err: {test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
                 print(output_txt)
                 f.write(f'{output_txt}\n')
                 if best_test_err > test_err:
@@ -138,8 +153,8 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
             optimizer.step(closure)
 
-    with open(f'best_test_error_{delta_type}.txt', 'a') as f:
-        output_txt = f'iteration: {iteration} \t \ttest err: {best_test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
+    with open(f'{path_to_save_txt}_{delta_type}_best.txt', 'a') as f:
+        output_txt = f'iteration: {iteration}\t mu: {mu} \ttest err: {best_test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
         print(f'delta type: {delta_type}' + " " + output_txt)
         f.write(f'{output_txt}\n')
 
@@ -149,21 +164,26 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
 if __name__ == '__main__':
     k_folds = 4
-
-    for i in range(2, 5):
-        for mu in [3, 300, 30000]:
+    mus = [3, 300, 30000]
+    delta_type = 'MSE'
+    for i in range(5):
+        for mu in mus:
             print(f'START OF ITERATION {i + 1}')
-            print(f'MU: {mu}')
+            print(f'mu: {mu}, delta: {delta_type}')
+
+            dir = f'popularity-MF-IPS/mu={mu}/'
+
+            os.makedirs(dir, exist_ok=True)
             read_data_and_split_to_folds(iteration=i + 1,
                                          get_inverse_propensities=popularity_MF_IPS_propensities,
-                                         path_to_save_txt=f"popularity-MF-IPS mu={mu}/egor_dirichlet_try_mu_{mu}",
-                                         delta_type=None,
+                                         path_to_save_txt=f"{dir}exp",
+                                         delta_type=delta_type,
                                          path="data/yahoo_data",
                                          k=k_folds,
                                          mu=mu)
 
-    # for mu in [3, 30, 300, 3000, 30000]:
-    #     print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MAE_CV.txt')
-    #     print_results(path=f'popularity-MF-IPS mu={mu}/dirichlet_try_mu_{mu}_MSE_CV.txt')
+    for mu in mus:
+        dir = f'popularity-MF-IPS/mu={mu}/'
+        print_results(path=f'{dir}exp_{delta_type}_CV.txt')
 
 
