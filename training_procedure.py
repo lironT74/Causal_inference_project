@@ -197,7 +197,7 @@ if __name__ == '__main__':
                                          k=k_folds,
                                          use_popularity=True,
                                          num_clusters=num_clusters,
-                                         mu=5)
+                                         mu=300)
 
     for num_clusters in num_clusterssss:
         print(f'num_clusters: {num_clusters}')
