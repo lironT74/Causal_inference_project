@@ -4,6 +4,9 @@ from propensities_estimation import MF_IPS_propensities, popularity_MF_IPS_prope
 
 
 def read_data_and_split_to_folds(iteration, get_inverse_propensities, path_to_save_txt, delta_type=None, path="data/yahoo_data", k=4, *args, **kwargs):
+    num_clusters = kwargs.get("num_clusters", -1)
+    if num_clusters == -1:
+        raise ValueError
 
     df_train, df_test, df_train_propensities, Y, Y_test, inv_propensities = read_yahoo(get_inverse_propensities, path, is_cv=True, **kwargs)
 
@@ -119,8 +122,6 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
 
 
 def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_dim, best_lam, path_to_save_txt='test_error', *args, **kwargs):
-
-
     use_popularity = kwargs.get("use_popularity", None)
     if use_popularity is None:
         raise ValueError
@@ -129,7 +130,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
     if mu == -1 and use_popularity:
         raise ValueError
 
-    num_clusters = kwargs.get('cluster_size', -1)
+    num_clusters = kwargs.get("num_clusters", -1)
     if num_clusters == -1:
         raise ValueError
 
@@ -153,7 +154,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
             with torch.no_grad():
                 train_err, test_err = model.calc_train_test_err()
-                output_txt = f'iteration: {iteration} \t k: {cluster_size} \t delta type: {delta_type}\t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t test err: {test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
+                output_txt = f'iteration: {iteration} \t k: {num_clusters} \t delta type: {delta_type}\t epoch: {epoch + 1}. loss: {loss} \t train err: {train_err} \t test err: {test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
                 print(output_txt)
                 f.write(f'{output_txt}\n')
                 if best_test_err > test_err:
@@ -168,7 +169,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
             optimizer.step(closure)
 
     with open(f'{path_to_save_txt}_{delta_type}_best.txt', 'a') as f:
-        output_txt = f'iteration: {iteration}\t k: {cluster_size} \ttest err: {best_test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
+        output_txt = f'iteration: {iteration}\t k: {num_clusters} \ttest err: {best_test_err} \t lam: {lam} \t inner_dim: {inner_dim} '
         print(f'delta type: {delta_type}' + " " + output_txt)
         f.write(f'{output_txt}\n')
 

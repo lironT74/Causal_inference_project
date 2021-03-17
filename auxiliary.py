@@ -116,8 +116,9 @@ def find_best_key_dict(dict_total):
 
 
 def read_yahoo(get_inverse_propensities, path="data/yahoo_data", is_cv=False, *args, **kwargs):
-
-
+    num_clusters = kwargs.get("num_clusters", -1)
+    if num_clusters == -1:
+        raise ValueError
 
     column_names = ['user_id', 'song_id', 'rating']
 
