@@ -129,8 +129,8 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
     if mu == -1 and use_popularity:
         raise ValueError
 
-    cluster_size = kwargs.get('cluster_size', -1)
-    if cluster_size == -1:
+    num_clusters = kwargs.get('cluster_size', -1)
+    if num_clusters == -1:
         raise ValueError
 
     num_users, num_items = Y.shape
@@ -178,7 +178,7 @@ def train_model_test(Y, Y_test, inv_propensities, iteration, delta_type, best_di
 
 if __name__ == '__main__':
     k_folds = 4
-    delta_type = 'MSE'
+    delta_type = 'MAE'
     num_clusterssss = [3, 5, 10]
     for i in range(5):
         for num_clusters in num_clusterssss:
