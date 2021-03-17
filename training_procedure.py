@@ -186,7 +186,7 @@ if __name__ == '__main__':
             print(f'START OF ITERATION {i + 1}')
             print(f'num_clusters: {num_clusters}, delta: {delta_type}')
 
-            dir = f'cluster-MF-IPS/num_clusters={num_clusters}/'
+            dir = f'popularity-cluster-MF-IPS/num_clusters={num_clusters}/'
 
             os.makedirs(dir, exist_ok=True)
             read_data_and_split_to_folds(iteration=i + 1,
@@ -195,13 +195,13 @@ if __name__ == '__main__':
                                          delta_type=delta_type,
                                          path="data/yahoo_data",
                                          k=k_folds,
-                                         use_popularity=False,
+                                         use_popularity=True,
                                          num_clusters=num_clusters,
                                          mu=5)
 
     for num_clusters in num_clusterssss:
         print(f'num_clusters: {num_clusters}')
-        dir = f'cluster-MF-IPS/num_clusters={num_clusters}/'
+        dir = f'popularity-cluster-MF-IPS/num_clusters={num_clusters}/'
         print_results(path=f'{dir}exp_{delta_type}_best.txt', at_index=6, epochs=7)
 
 
