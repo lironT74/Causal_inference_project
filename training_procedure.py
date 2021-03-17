@@ -56,14 +56,14 @@ def read_data_and_split_to_folds(iteration, get_inverse_propensities, path_to_sa
 
     if delta_type is None:
         best_test_err_mse = train_model_test(Y, Y_test, inv_propensities, iteration, "MSE", dim_mse, lam_mse,
-                                             path_to_save_txt=path_to_save_txt, **kwargs)
+                                             path_to_save_txt, **kwargs)
         best_test_err_mae = train_model_test(Y, Y_test, inv_propensities, iteration, "MAE", dim_mae, lam_mae,
-                                             path_to_save_txt=path_to_save_txt, **kwargs)
+                                             path_to_save_txt, **kwargs)
 
         return best_test_err_mse, best_test_err_mae
     else:
         return train_model_test(Y, Y_test, inv_propensities, iteration,
-                                delta_type, dim_mse, lam_mse, path_to_save_txt=path_to_save_txt, **kwargs)
+                                delta_type, dim_mse, lam_mse, path_to_save_txt, **kwargs)
 
 
 def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_num, iteration, delta_type, path_to_save_txt='torch_find_params', *args, **kwargs):
@@ -76,7 +76,7 @@ def train_model_CV(Y_train, Y_val, train_propensities, val_propensities, fold_nu
     if mu == -1 and use_popularity:
         raise ValueError
 
-    num_clusters = kwargs.get('num_clusters', -1)
+    num_clusters = kwargs.get("num_clusters", -1)
     if num_clusters == -1:
         raise ValueError
 
